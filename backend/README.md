@@ -1,12 +1,12 @@
 # AgentScout AI — Backend Service
 
-Backend RESTful API foundation built with Node.js, Express.js, and MongoDB Atlas for the AgentScout AI platform.
+Backend RESTful API service built with Node.js, Express.js, MongoDB Atlas, and JWT Authentication for the AgentScout AI platform.
 
 ---
 
 ## 1. Backend Purpose
 
-This backend service acts as the central API handler for AgentScout AI. It provides a secure, rate-limited, and CORS-enabled HTTP environment integrated with **MongoDB Atlas** via Mongoose, configured for future phases (Authentication, Bright Data Scraper Studio, and Google Gemini AI).
+This backend service acts as the central API handler for AgentScout AI. It provides a secure, rate-limited, and CORS-enabled HTTP environment integrated with **MongoDB Atlas** via Mongoose, featuring **JWT Authentication** in HTTP-only cookies and role-based authorization (`user` vs `admin`).
 
 ---
 
@@ -15,7 +15,7 @@ This backend service acts as the central API handler for AgentScout AI. It provi
 - **Runtime:** Node.js
 - **Framework:** Express.js
 - **Database:** MongoDB Atlas (Mongoose ODM)
-- **Security:** Helmet, CORS, Express Rate Limit
+- **Authentication & Security:** JWT (JSON Web Tokens), bcryptjs, HTTP-only cookies, Helmet, CORS, Express Rate Limit
 - **Middleware:** Cookie Parser, Morgan (logging), Express JSON/Urlencoded body parsers
 - **Environment Management:** dotenv
 - **Development Tooling:** Nodemon
@@ -28,12 +28,12 @@ This backend service acts as the central API handler for AgentScout AI. It provi
 backend/
 ├── src/
 │   ├── config/          # DB connection & environment configuration
-│   ├── controllers/     # API route controllers
-│   ├── middleware/      # Rate limiting, 404, and centralized error handling
-│   ├── models/          # Mongoose database models (Phase 5+)
-│   ├── routes/          # Express API route handlers
+│   ├── controllers/     # API route controllers (health, auth)
+│   ├── middleware/      # Auth verification, role authorization, rate limiting, 404, error handling
+│   ├── models/          # Mongoose database models (User)
+│   ├── routes/          # Express API route handlers (health, auth)
 │   ├── services/        # External services & business logic (Phase 7+)
-│   ├── utils/           # Helper utilities
+│   ├── utils/           # JWT generation & cookie helper utilities
 │   └── server.js        # Express application entry point
 ├── .env.example         # Template for environment variables
 ├── .gitignore            # Git ignore definitions
@@ -48,62 +48,57 @@ backend/
 Create a `.env` file in the `backend/` directory by copying `.env.example`:
 
 ```env
-PORT=5000
+PORT=5001
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173
-MONGODB_URI=mongodb+srv://archanagokhru0_db_user:<db_password>@agentscoutcluster.wc25piu.mongodb.net/agentscout?retryWrites=true&w=majority&appName=AgentScoutCluster
+
+# Database Configuration
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/agentscout?retryWrites=true&w=majority
+
+# JWT Authentication
+JWT_SECRET=your_long_random_secret_here
+JWT_EXPIRES_IN=7d
+COOKIE_EXPIRES_DAYS=7
 ```
 
-> **Note:** Replace `<db_password>` with your actual MongoDB Atlas database password in your local `.env` file. Do not commit `.env` to git.
+> **Note:** Do not commit `.env` to git.
 
 ---
 
-## 5. Installation
+## 5. Authentication Endpoints
 
-Navigate to the `backend/` directory and install dependencies:
+### `POST /api/auth/register`
+Register a new candidate user account.
+- **Request Body:** `{ "name": "John Doe", "email": "john@example.com", "password": "securepassword123" }`
+- **Response:** `201 Created` with HTTP-only session cookie set.
 
-```bash
-cd backend
-npm install
-```
+### `POST /api/auth/login`
+Authenticate user credentials and issue session cookie.
+- **Request Body:** `{ "email": "john@example.com", "password": "securepassword123" }`
+- **Response:** `200 OK` with HTTP-only session cookie set.
 
----
+### `POST /api/auth/logout`
+Invalidate current user session cookie.
+- **Access:** Private
+- **Response:** `200 OK`
 
-## 6. Running the Backend
-
-### Development Mode (with hot-reload via Nodemon):
-```bash
-npm run dev
-```
-
-### Production Mode:
-```bash
-npm start
-```
-
-Default development server runs on: `http://localhost:5000`
+### `GET /api/auth/me`
+Retrieve current authenticated user session details.
+- **Access:** Private
+- **Response:** `200 OK`
 
 ---
 
-## 7. Health Endpoint
+## 6. System Health Endpoint
 
 ### `GET /api/health`
 Verifies backend operational status and MongoDB Atlas connection state.
 
-**Sample Request:**
-```bash
-curl http://localhost:5000/api/health
-```
-
-**Sample Response:**
 ```json
 {
   "success": true,
   "message": "AgentScout API is running",
   "environment": "development",
-  "database": {
-    "status": "connected",
-    "readyState": 1
-  }
+  "database": "connected"
 }
 ```
