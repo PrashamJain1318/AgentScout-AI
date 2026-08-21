@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
+const mongoose = require('mongoose');
 
 // Load environment variables
 dotenv.config();
@@ -24,7 +25,7 @@ connectDB();
 // 2. Security HTTP Headers
 app.use(helmet());
 
-// 3. CORS Configuration (supports credentials for future HTTP-only auth cookies)
+// 3. CORS Configuration
 app.use(
   cors({
     origin: CLIENT_URL,
@@ -68,5 +69,26 @@ server.on('error', (err) => {
     console.error('Server error:', err);
   }
 });
+
+// Graceful Shutdown Handler
+const gracefulShutdown = (signal) => {
+  console.log(`Received ${signal}. Starting graceful shutdown...`);
+  server.close(async () => {
+    console.log('HTTP server closed.');
+    try {
+      if (mongoose.connection.readyState !== 0) {
+        await mongoose.connection.close();
+        console.log('Mongoose connection closed.');
+      }
+      process.exit(0);
+    } catch (err) {
+      console.error('Error closing Mongoose connection:', err);
+      process.exit(1);
+    }
+  });
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 module.exports = app;

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 /**
  * Controller to handle Health Check requests.
- * Includes server status, environment, and MongoDB connection status.
+ * Dynamic database connection status derived from Mongoose readyState.
  */
 const getHealthStatus = (req, res) => {
   const stateMap = {
@@ -13,16 +13,13 @@ const getHealthStatus = (req, res) => {
   };
 
   const dbState = mongoose.connection.readyState;
-  const dbStatus = stateMap[dbState] || 'unknown';
+  const dbStatus = stateMap[dbState] || 'disconnected';
 
   res.status(200).json({
     success: true,
     message: 'AgentScout API is running',
     environment: process.env.NODE_ENV || 'development',
-    database: {
-      status: dbStatus,
-      readyState: dbState
-    }
+    database: dbStatus
   });
 };
 
