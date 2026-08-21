@@ -15,10 +15,7 @@ const connectDB = async () => {
     throw new Error('MONGODB_URI contains placeholder <db_password>. Please configure your database password in backend/.env.');
   }
 
-  const conn = await mongoose.connect(connStr, {
-    serverSelectionTimeoutMS: 5000 // Fast 5s timeout if cluster/IP is unreachable
-  });
-
+  const conn = await mongoose.connect(connStr);
   console.log(`MongoDB connected successfully: ${conn.connection.host}`);
   return conn;
 };

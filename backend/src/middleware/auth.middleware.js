@@ -22,7 +22,7 @@ const protect = async (req, res, next) => {
   if (!token || token === 'none') {
     return res.status(401).json({
       success: false,
-      message: 'Not authorized to access this route'
+      message: 'Authentication required'
     });
   }
 
@@ -33,7 +33,7 @@ const protect = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Not authorized to access this route'
+        message: 'Authentication required'
       });
     }
 
@@ -42,7 +42,7 @@ const protect = async (req, res, next) => {
   } catch (err) {
     return res.status(401).json({
       success: false,
-      message: 'Not authorized to access this route'
+      message: 'Authentication required'
     });
   }
 };

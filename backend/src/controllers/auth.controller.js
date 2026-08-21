@@ -8,6 +8,11 @@ const sendTokenCookie = require('../utils/sendTokenCookie');
  */
 const register = async (req, res, next) => {
   try {
+    console.log("=== REGISTER DEBUG ===");
+    console.log("Content-Type:", req.headers["content-type"]);
+    console.log("Body type:", typeof req.body);
+    console.log("Body fields:", Object.keys(req.body || {}));
+
     let body = req.body || {};
 
     // 1. Convert buffer or string to object if needed

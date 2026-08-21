@@ -16,6 +16,7 @@ const errorHandler = require('./middleware/error.middleware');
 const apiRouter = require('./routes');
 
 const app = express();
+app.use(express.json({ limit: "10kb" }));
 const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 

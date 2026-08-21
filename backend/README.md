@@ -6,7 +6,7 @@ Backend RESTful API service built with Node.js, Express.js, MongoDB Atlas, and J
 
 ## 1. Backend Purpose
 
-This backend service acts as the central API handler for AgentScout AI. It provides a secure, rate-limited, and CORS-enabled HTTP environment integrated with **MongoDB Atlas** via Mongoose, featuring **JWT Authentication** in HTTP-only cookies and role-based authorization (`user` vs `admin`).
+This backend service acts as the central API handler for AgentScout AI. It provides a secure, rate-limited, and CORS-enabled HTTP environment integrated with **MongoDB Atlas** via Mongoose, featuring **JWT Authentication** in HTTP-only cookies, role-based authorization (`user` vs `admin`), and protected Candidate User Profile management.
 
 ---
 
@@ -28,10 +28,10 @@ This backend service acts as the central API handler for AgentScout AI. It provi
 backend/
 ├── src/
 │   ├── config/          # DB connection & environment configuration
-│   ├── controllers/     # API route controllers (health, auth)
+│   ├── controllers/     # API route controllers (health, auth, user)
 │   ├── middleware/      # Auth verification, role authorization, rate limiting, 404, error handling
 │   ├── models/          # Mongoose database models (User)
-│   ├── routes/          # Express API route handlers (health, auth)
+│   ├── routes/          # Express API route handlers (health, auth, user)
 │   ├── services/        # External services & business logic (Phase 7+)
 │   ├── utils/           # JWT generation & cookie helper utilities
 │   └── server.js        # Express application entry point
@@ -61,31 +61,19 @@ JWT_EXPIRES_IN=7d
 COOKIE_EXPIRES_DAYS=7
 ```
 
-> **Note:** Do not commit `.env` to git.
-
 ---
 
-## 5. Authentication Endpoints
+## 5. User & Authentication Endpoints
 
-### `POST /api/auth/register`
-Register a new candidate user account.
-- **Request Body:** `{ "name": "John Doe", "email": "john@example.com", "password": "securepassword123" }`
-- **Response:** `201 Created` with HTTP-only session cookie set.
+### Authentication Routes (`/api/auth`)
+- `POST /api/auth/register` — Register a candidate user account.
+- `POST /api/auth/login` — Authenticate candidate credentials and issue HTTP-only cookie.
+- `POST /api/auth/logout` — Invalidate session cookie.
+- `GET /api/auth/me` — Retrieve current authenticated session profile.
 
-### `POST /api/auth/login`
-Authenticate user credentials and issue session cookie.
-- **Request Body:** `{ "email": "john@example.com", "password": "securepassword123" }`
-- **Response:** `200 OK` with HTTP-only session cookie set.
-
-### `POST /api/auth/logout`
-Invalidate current user session cookie.
-- **Access:** Private
-- **Response:** `200 OK`
-
-### `GET /api/auth/me`
-Retrieve current authenticated user session details.
-- **Access:** Private
-- **Response:** `200 OK`
+### Protected User Routes (`/api/users`)
+- `GET /api/users/profile` — Fetch current candidate profile. (Access: Private)
+- `PUT /api/users/profile` — Update candidate profile details (headline, bio, skills, location, social links, experience, education, search preferences). (Access: Private)
 
 ---
 
