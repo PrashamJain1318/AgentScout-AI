@@ -10,8 +10,14 @@ const register = async (req, res, next) => {
   try {
     let body = req.body || {};
 
-    // 1. Fallback parse if body is raw JSON string
-    if (typeof body === 'string') {
+    // 1. Convert buffer or string to object if needed
+    if (Buffer.isBuffer(body)) {
+      try {
+        body = JSON.parse(body.toString('utf-8'));
+      } catch (e) {
+        body = {};
+      }
+    } else if (typeof body === 'string') {
       try {
         body = JSON.parse(body);
       } catch (e) {
@@ -19,18 +25,66 @@ const register = async (req, res, next) => {
       }
     }
 
-    // 2. Support nested payload wrappers if provided
+    // 2. Handle nested payload wrappers
     if (body.user && typeof body.user === 'object') {
       body = { ...body, ...body.user };
     } else if (body.data && typeof body.data === 'object') {
       body = { ...body, ...body.data };
+    } else if (body.payload && typeof body.payload === 'object') {
+      body = { ...body, ...body.payload };
     }
 
-    // 3. Extract and normalize fields
-    const firstName = (body.firstName || body.first_name || req.query.firstName || '').toString().trim();
-    const lastName = (body.lastName || body.last_name || req.query.lastName || '').toString().trim();
-    const email = (body.email || req.query.email || '').toString().trim();
-    const password = body.password ? body.password.toString() : (req.query.password ? req.query.password.toString() : '');
+    // 3. Extract parameters with alias & case fallbacks
+    let firstName = (
+      body.firstName ||
+      body.first_name ||
+      body.firstname ||
+      body.FirstName ||
+      req.query.firstName ||
+      req.query.first_name ||
+      ''
+    ).toString().trim();
+
+    let lastName = (
+      body.lastName ||
+      body.last_name ||
+      body.lastname ||
+      body.LastName ||
+      req.query.lastName ||
+      req.query.last_name ||
+      ''
+    ).toString().trim();
+
+    // Fallback: Extract from single `name` or `fullName` if firstName/lastName not explicitly provided
+    const fullName = (body.name || body.fullName || body.full_name || req.query.name || '').toString().trim();
+    if (fullName && (!firstName || !lastName)) {
+      const parts = fullName.split(/\s+/);
+      if (!firstName) firstName = parts[0] || '';
+      if (!lastName) lastName = parts.slice(1).join(' ') || parts[0] || '';
+    }
+
+    // Secondary fallback: Sync single component names
+    if (firstName && !lastName) {
+      lastName = firstName;
+    } else if (lastName && !firstName) {
+      firstName = lastName;
+    }
+
+    const email = (
+      body.email ||
+      body.emailAddress ||
+      body.email_address ||
+      body.username ||
+      req.query.email ||
+      ''
+    ).toString().trim();
+
+    const password = (
+      body.password ||
+      body.pass ||
+      req.query.password ||
+      ''
+    ).toString();
 
     // 4. Input Validation
     if (!firstName || !lastName || !email || !password) {
@@ -81,7 +135,13 @@ const login = async (req, res, next) => {
   try {
     let body = req.body || {};
 
-    if (typeof body === 'string') {
+    if (Buffer.isBuffer(body)) {
+      try {
+        body = JSON.parse(body.toString('utf-8'));
+      } catch (e) {
+        body = {};
+      }
+    } else if (typeof body === 'string') {
       try {
         body = JSON.parse(body);
       } catch (e) {
@@ -93,8 +153,21 @@ const login = async (req, res, next) => {
       body = { ...body, ...body.user };
     }
 
-    const email = (body.email || req.query.email || '').toString().trim();
-    const password = body.password ? body.password.toString() : (req.query.password ? req.query.password.toString() : '');
+    const email = (
+      body.email ||
+      body.emailAddress ||
+      body.email_address ||
+      body.username ||
+      req.query.email ||
+      ''
+    ).toString().trim();
+
+    const password = (
+      body.password ||
+      body.pass ||
+      req.query.password ||
+      ''
+    ).toString();
 
     // 1. Validate Input
     if (!email || !password) {

@@ -42,9 +42,15 @@ app.use(express.json({ limit: '10kb', type: ['application/json', 'text/plain', '
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
-// Fallback JSON parser if raw string body is received
+// Universal body parser fallback for buffers and raw JSON strings
 app.use((req, res, next) => {
-  if (typeof req.body === 'string' && req.body.trim().startsWith('{')) {
+  if (Buffer.isBuffer(req.body)) {
+    try {
+      req.body = JSON.parse(req.body.toString('utf-8'));
+    } catch (e) {
+      // Ignore parse failure
+    }
+  } else if (typeof req.body === 'string' && req.body.trim().startsWith('{')) {
     try {
       req.body = JSON.parse(req.body);
     } catch (e) {
