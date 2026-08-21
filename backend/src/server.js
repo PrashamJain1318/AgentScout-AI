@@ -37,10 +37,22 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// 4. Request Body Parsers & Cookie Parser
-app.use(express.json({ limit: '10kb' }));
+// 4. Request Body Parsers (supports JSON, text/plain raw bodies, urlencoded)
+app.use(express.json({ limit: '10kb', type: ['application/json', 'text/plain', '*/*+json'] }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
+
+// Fallback JSON parser if raw string body is received
+app.use((req, res, next) => {
+  if (typeof req.body === 'string' && req.body.trim().startsWith('{')) {
+    try {
+      req.body = JSON.parse(req.body);
+    } catch (e) {
+      // Ignore parse failure
+    }
+  }
+  next();
+});
 
 // 5. Global Rate Limiter
 app.use('/api', apiLimiter);

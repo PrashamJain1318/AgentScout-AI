@@ -8,14 +8,31 @@ const sendTokenCookie = require('../utils/sendTokenCookie');
  */
 const register = async (req, res, next) => {
   try {
-    const body = req.body || {};
+    let body = req.body || {};
 
-    const firstName = (body.firstName || body.first_name || '').toString().trim();
-    const lastName = (body.lastName || body.last_name || '').toString().trim();
-    const email = (body.email || '').toString().trim();
-    const password = body.password ? body.password.toString() : '';
+    // 1. Fallback parse if body is raw JSON string
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        body = {};
+      }
+    }
 
-    // 1. Input Validation
+    // 2. Support nested payload wrappers if provided
+    if (body.user && typeof body.user === 'object') {
+      body = { ...body, ...body.user };
+    } else if (body.data && typeof body.data === 'object') {
+      body = { ...body, ...body.data };
+    }
+
+    // 3. Extract and normalize fields
+    const firstName = (body.firstName || body.first_name || req.query.firstName || '').toString().trim();
+    const lastName = (body.lastName || body.last_name || req.query.lastName || '').toString().trim();
+    const email = (body.email || req.query.email || '').toString().trim();
+    const password = body.password ? body.password.toString() : (req.query.password ? req.query.password.toString() : '');
+
+    // 4. Input Validation
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -30,7 +47,7 @@ const register = async (req, res, next) => {
       });
     }
 
-    // 2. Check for Duplicate Email -> HTTP 409 Conflict
+    // 5. Check for Duplicate Email -> HTTP 409 Conflict
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(409).json({
@@ -39,7 +56,7 @@ const register = async (req, res, next) => {
       });
     }
 
-    // 3. Create User Document (Always force role: 'user')
+    // 6. Create User Document (Always force role: 'user')
     const user = await User.create({
       firstName,
       lastName,
@@ -48,7 +65,7 @@ const register = async (req, res, next) => {
       role: 'user'
     });
 
-    // 4. Issue HTTP-only cookie and send 201 Created response
+    // 7. Issue HTTP-only cookie and send 201 Created response
     sendTokenCookie(user, 201, res, 'Account created successfully');
   } catch (error) {
     next(error);
@@ -62,9 +79,22 @@ const register = async (req, res, next) => {
  */
 const login = async (req, res, next) => {
   try {
-    const body = req.body || {};
-    const email = (body.email || '').toString().trim();
-    const password = body.password ? body.password.toString() : '';
+    let body = req.body || {};
+
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        body = {};
+      }
+    }
+
+    if (body.user && typeof body.user === 'object') {
+      body = { ...body, ...body.user };
+    }
+
+    const email = (body.email || req.query.email || '').toString().trim();
+    const password = body.password ? body.password.toString() : (req.query.password ? req.query.password.toString() : '');
 
     // 1. Validate Input
     if (!email || !password) {
