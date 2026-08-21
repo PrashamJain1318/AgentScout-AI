@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Opportunity = require('../models/Opportunity.model');
 
 /**
- * Fetch paginated list of opportunities with filter, search, and sort capabilities.
+ * Fetch paginated list of opportunities with filter, search, location, and sort capabilities.
  * @route GET /api/opportunities
  * @access Public
  */
@@ -12,7 +12,7 @@ const getOpportunities = async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
-    const { search, type, remote, sort } = req.query;
+    const { search, type, remote, sort, location } = req.query;
 
     // Base query filter: active opportunities only
     const filter = { isActive: true };
@@ -31,7 +31,15 @@ const getOpportunities = async (req, res, next) => {
       }
     }
 
-    // 3. Keyword Search Filter (title, company, description, requirements)
+    // 3. Location Filter (case-insensitive regex matching)
+    if (location && location.trim()) {
+      filter.location = {
+        $regex: location.trim(),
+        $options: 'i'
+      };
+    }
+
+    // 4. Keyword Search Filter (title, company, description, requirements)
     if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
       filter.$or = [
@@ -42,7 +50,7 @@ const getOpportunities = async (req, res, next) => {
       ];
     }
 
-    // 4. Sorting Options
+    // 5. Sorting Options
     let sortOptions = { postedAt: -1, createdAt: -1 };
     if (sort === 'oldest') {
       sortOptions = { postedAt: 1, createdAt: 1 };
@@ -50,7 +58,7 @@ const getOpportunities = async (req, res, next) => {
       sortOptions = { company: 1, title: 1 };
     }
 
-    // 5. Execute DB Query & Count
+    // 6. Execute DB Query & Count
     const total = await Opportunity.countDocuments(filter);
     const opportunities = await Opportunity.find(filter)
       .sort(sortOptions)
