@@ -8,7 +8,12 @@ const sendTokenCookie = require('../utils/sendTokenCookie');
  */
 const register = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, password } = req.body;
+    const body = req.body || {};
+
+    const firstName = (body.firstName || body.first_name || '').toString().trim();
+    const lastName = (body.lastName || body.last_name || '').toString().trim();
+    const email = (body.email || '').toString().trim();
+    const password = body.password ? body.password.toString() : '';
 
     // 1. Input Validation
     if (!firstName || !lastName || !email || !password) {
@@ -57,7 +62,9 @@ const register = async (req, res, next) => {
  */
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const body = req.body || {};
+    const email = (body.email || '').toString().trim();
+    const password = body.password ? body.password.toString() : '';
 
     // 1. Validate Input
     if (!email || !password) {
