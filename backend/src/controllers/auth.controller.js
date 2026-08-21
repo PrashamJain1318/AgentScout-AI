@@ -8,42 +8,43 @@ const sendTokenCookie = require('../utils/sendTokenCookie');
  */
 const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
     // 1. Input Validation
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name, email, and password'
+        message: 'Please provide firstName, lastName, email, and password'
       });
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters long'
+        message: 'Password must be at least 8 characters long'
       });
     }
 
-    // 2. Check if user already exists
+    // 2. Check for Duplicate Email -> HTTP 409 Conflict
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
         message: 'User with this email already exists'
       });
     }
 
-    // 3. Create user (Enforcing role to 'user' for public registration)
+    // 3. Create User Document (Always force role: 'user')
     const user = await User.create({
-      name,
+      firstName,
+      lastName,
       email: email.toLowerCase(),
       password,
       role: 'user'
     });
 
-    // 4. Issue HTTP-only cookie and send response
-    sendTokenCookie(user, 201, res, 'User registered successfully');
+    // 4. Issue HTTP-only cookie and send 201 Created response
+    sendTokenCookie(user, 201, res, 'Account created successfully');
   } catch (error) {
     next(error);
   }
@@ -85,7 +86,7 @@ const login = async (req, res, next) => {
       });
     }
 
-    // 4. Issue HTTP-only cookie and send response
+    // 4. Issue HTTP-only cookie and send 200 OK response
     sendTokenCookie(user, 200, res, 'Logged in successfully');
   } catch (error) {
     next(error);
@@ -124,7 +125,14 @@ const getMe = async (req, res, next) => {
   try {
     res.status(200).json({
       success: true,
-      user: req.user
+      user: {
+        id: req.user._id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email,
+        role: req.user.role,
+        profile: req.user.profile
+      }
     });
   } catch (error) {
     next(error);

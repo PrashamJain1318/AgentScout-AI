@@ -24,11 +24,11 @@ const sendTokenCookie = (user, statusCode, res, message) => {
     success: true,
     message,
     user: {
-      _id: user._id,
-      name: user.name,
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
-      role: user.role,
-      profile: user.profile
+      role: user.role
     }
   });
 };
