@@ -48,7 +48,25 @@ const UserSchema = new mongoose.Schema(
       preferences: {
         desiredRoles: { type: [String], default: [] },
         preferredLocations: { type: [String], default: [] },
+        jobTypes: { type: [String], default: ['Full-time'] },
+        workModes: { type: [String], default: ['Remote', 'Hybrid'] },
+        minimumSalary: { type: Number, default: 0 },
+        experienceLevel: { type: String, default: 'Mid Level' },
         remotePreference: { type: Boolean, default: true }
+      },
+      notificationPreferences: {
+        newMatches: { type: Boolean, default: true },
+        excellentMatches: { type: Boolean, default: true },
+        applicationUpdates: { type: Boolean, default: true },
+        interviewAlerts: { type: Boolean, default: true },
+        offerAlerts: { type: Boolean, default: true },
+        careerCopilot: { type: Boolean, default: true },
+        emailNotifications: { type: Boolean, default: false }
+      },
+      privacyPreferences: {
+        profileVisibility: { type: String, enum: ['public', 'recruiters', 'private'], default: 'recruiters' },
+        recruiterDiscovery: { type: Boolean, default: true },
+        aiPersonalization: { type: Boolean, default: true }
       }
     }
   },

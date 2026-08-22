@@ -53,21 +53,21 @@ The backend is built as a RESTful web service using Node.js and Express.js, enfo
 - **Database Modeling:** Mongoose ODM connecting to MongoDB Atlas.
 - **Authentication:** JWT (JSON Web Tokens) issued in HTTP-only, SameSite cookies; password hashing via `bcryptjs`.
 - **Integrations:**
-  - **Bright Data Scraper Studio:** Webhooks / API triggers for automated scraping workflows.
+  - **Bright Data Scraper Studio:** Webhooks / API triggers configured via `BRIGHT_DATA_API_KEY`, `BRIGHT_DATA_DATASET_ID`, and `BRIGHT_DATA_BASE_URL`.
   - **Gemini API:** SDK integration for embeddings, match calculation, and resume synthesis.
 
-### Backend Module Structure (Planned)
+### Backend Module Structure
 ```
 backend/
 ├── src/
-│   ├── config/         # DB connection, env verification, external client configs
-│   ├── controllers/    # Request/Response handlers
+│   ├── config/         # DB connection, env verification, Bright Data config (brightData.js)
+│   ├── controllers/    # Request/Response handlers (auth, user, opportunity, scraper)
 │   ├── middleware/     # Auth verification, error handling, rate limiting, validation
-│   ├── models/         # Mongoose Schemas (User, Opportunity, ScraperLog, MatchResult)
-│   ├── routes/         # Express API route declarations
-│   ├── services/       # Business logic (Gemini API, Bright Data integration, Matching algorithm)
-│   ├── utils/          # Token helpers, response formatters, logger
-│   └── app.js          # Express app instance and server listener
+│   ├── models/         # Mongoose Schemas (User, Opportunity)
+│   ├── routes/         # Express API route declarations (auth, user, opportunity, scraper)
+│   ├── services/       # Business logic (Bright Data service & Opportunity normalizer)
+│   ├── utils/          # Token helpers, response formatters, cookie utilities
+│   └── server.js       # Express app instance and server listener
 ```
 
 ---
@@ -78,19 +78,16 @@ The application uses **MongoDB Atlas** for document-based relational flexibility
 
 ### Schemas Overview
 1. **User Schema (`users`)**
-   - Credentials (name, email, hashedPassword, role: `user` | `admin`)
-   - Profile (headline, location, biography, skills: `[String]`, experience: `[Object]`, education: `[Object]`)
+   - Credentials (firstName, lastName, email, password, role: `user` | `admin`)
+   - Profile (headline, location, bio, biography, skills: `[String]`, github, linkedin, experience: `[Object]`, education: `[Object]`)
    - Preferences (desiredRoles, preferredLocations, remotePreference)
    - Saved Opportunities (`[ObjectId]` references)
 
 2. **Opportunity Schema (`opportunities`)**
    - Metadata (title, company, location, type: `job` | `internship` | `research`, remote: `Boolean`)
-   - Details (description, requirements: `[String]`, salaryRange, applicationUrl)
-   - Source Info (sourceUrl, Bright Data job ID, scrapedAt)
-   - Embeddings / Keywords for vector similarity indexing.
-
-3. **Scraper Log Schema (`scraper_logs`)**
-   - Execution details (runId, triggeredBy, status: `pending` | `completed` | `failed`, itemsScraped, startedAt, completedAt, errorDetails)
+   - Details (description, requirements: `[String]`, salary, applicationUrl)
+   - Source Info (source, sourceUrl, brightDataJobId, isActive, postedAt)
+   - Compound text index (`title`, `company`, `description`, `requirements`).
 
 ---
 
@@ -117,21 +114,21 @@ AUTHENTICATED USER
 
 ## 6. Bright Data Scraping Architecture
 
-Scrape-Verse Hackathon integration utilizes **Bright Data Scraper Studio** to harvest live opportunity data from public career boards.
+Scrape-Verse Hackathon integration utilizes **Bright Data Scraper Studio** (`BRIGHT_DATA_API_KEY`, `BRIGHT_DATA_DATASET_ID`, `BRIGHT_DATA_BASE_URL`) to harvest live opportunity data from public career boards.
 
 ### Scraping Flow
 ```
 PUBLIC WEB DATA
       ↓
-BRIGHT DATA SCRAPER STUDIO
+BRIGHT DATA SCRAPER STUDIO (BRIGHT_DATA_DATASET_ID)
       ↓
-STRUCTURED JSON
+STRUCTURED JSON / WEBHOOK
       ↓
-BACKEND API
+BACKEND API (POST /api/scraper/run)
       ↓
-VALIDATION + NORMALIZATION
+VALIDATION + NORMALIZATION (opportunityNormalizer.service.js)
       ↓
-MONGODB ATLAS
+MONGODB ATLAS (Deduplication via brightDataJobId / sourceUrl)
       ↓
 AI MATCHING
       ↓
@@ -147,7 +144,7 @@ The recommendation engine leverages Google Gemini API to analyze candidate profi
 ### Matching Steps
 1. **Feature Extraction:** Transform raw user profile (skills, experience, preferences) into a normalized candidate summary.
 2. **Contextual Evaluation:** Send structured candidate parameters alongside candidate opportunity specifications to Gemini.
-3. **Scoring & Rationale:** Gemini computes a composite match percentage (0–100%) and generates actionable recommendations (e.g., "Highlight your Node.js experience to boost match rate").
+3. **Scoring & Rationale:** Gemini computes a composite match percentage (0–100%) and generates actionable recommendations.
 
 ---
 
@@ -167,31 +164,20 @@ The User Dashboard provides an interactive workspace for job seekers.
 
 The Admin Dashboard is reserved for authorized platform operators.
 
-### Admin Flow
-```
-ADMIN LOGIN
-      ↓
-ADMIN AUTHORIZATION
-      ↓
-ADMIN DASHBOARD
-      ↓
-USERS / OPPORTUNITIES / SCRAPER / ANALYTICS
-```
-
 ---
 
 ## 10. Deployment Architecture
 
 - **Frontend:** Host on Vercel or Netlify with continuous deployment from GitHub.
 - **Backend:** Host on Render, Railway, or Fly.io with Node.js environment.
-- **Database:** Cloud MongoDB Atlas cluster (M0 or dedicated instance).
+- **Database:** Cloud MongoDB Atlas cluster.
 - **SSL / CORS:** HTTPS enforced across client and server with explicit CORS whitelist settings.
 
 ---
 
 ## 11. Security Architecture
 
-1. **Secrets Management:** Environment variables (`.env`) for DB credentials, JWT secrets, and API keys. Strict `.gitignore` policy.
+1. **Secrets Management:** Environment variables (`.env`) for DB credentials, JWT secrets, and Bright Data API configurations (`BRIGHT_DATA_API_KEY`, `BRIGHT_DATA_DATASET_ID`, `BRIGHT_DATA_BASE_URL`). Strict `.gitignore` policy.
 2. **Password Hashing:** `bcryptjs` with standard salt rounds (10+).
 3. **Cookie Security:** `HttpOnly`, `Secure` (production), `SameSite=Lax/Strict`.
 4. **Input Sanitization & Validation:** Express validation middleware checking payload types and preventing SQL/NoSQL injection.
@@ -204,6 +190,7 @@ USERS / OPPORTUNITIES / SCRAPER / ANALYTICS
 ```
 +------------------+         +-------------------------------+         +---------------------+
 | Public Web Data  | ------> |  Bright Data Scraper Studio   | ------> | Structured JSON     |
+|                  |         |   (BRIGHT_DATA_DATASET_ID)    |         |                     |
 +------------------+         +-------------------------------+         +---------------------+
                                                                                   |
                                                                                   v

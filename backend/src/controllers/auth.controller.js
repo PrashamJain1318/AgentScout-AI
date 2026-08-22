@@ -8,11 +8,6 @@ const sendTokenCookie = require('../utils/sendTokenCookie');
  */
 const register = async (req, res, next) => {
   try {
-    console.log("=== REGISTER DEBUG ===");
-    console.log("Content-Type:", req.headers["content-type"]);
-    console.log("Body type:", typeof req.body);
-    console.log("Body fields:", Object.keys(req.body || {}));
-
     let body = req.body || {};
 
     // 1. Convert buffer or string to object if needed
@@ -156,6 +151,12 @@ const login = async (req, res, next) => {
 
     if (body.user && typeof body.user === 'object') {
       body = { ...body, ...body.user };
+    } else if (body.data && typeof body.data === 'object') {
+      body = { ...body, ...body.data };
+    } else if (body.credentials && typeof body.credentials === 'object') {
+      body = { ...body, ...body.credentials };
+    } else if (body.payload && typeof body.payload === 'object') {
+      body = { ...body, ...body.payload };
     }
 
     const email = (
@@ -163,14 +164,18 @@ const login = async (req, res, next) => {
       body.emailAddress ||
       body.email_address ||
       body.username ||
+      body.user ||
       req.query.email ||
+      req.query.username ||
       ''
     ).toString().trim();
 
     const password = (
       body.password ||
       body.pass ||
+      body.user_password ||
       req.query.password ||
+      req.query.pass ||
       ''
     ).toString();
 

@@ -1,0 +1,299 @@
+import { useEffect } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Brain,
+  Radio,
+  Target,
+  Search,
+  Sparkles,
+  BookmarkCheck,
+  BriefcaseBusiness,
+  BarChart3,
+  FileText,
+  CheckSquare,
+  Settings,
+  UserRound,
+  LogOut,
+  X,
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+
+const navigation = [
+  {
+    label: "Dashboard",
+    path: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Career OS",
+    path: "/dashboard/career-os",
+    icon: Brain,
+  },
+  {
+    label: "Opp Monitor",
+    path: "/dashboard/opportunity-monitor",
+    icon: Radio,
+  },
+  {
+    label: "Career Planner",
+    path: "/dashboard/career-planner",
+    icon: Target,
+  },
+  {
+    label: "Opportunities",
+    path: "/opportunities",
+    icon: Search,
+  },
+  {
+    label: "Matches",
+    path: "/dashboard/matches",
+    icon: Sparkles,
+  },
+  {
+    label: "Applications",
+    path: "/dashboard/applications",
+    icon: BookmarkCheck,
+  },
+  {
+    label: "App Assistant",
+    path: "/dashboard/application-assistant",
+    icon: CheckSquare,
+  },
+  {
+    label: "Interview Coach",
+    path: "/dashboard/interview-coach",
+    icon: Brain,
+  },
+  {
+    label: "Career Copilot",
+    path: "/dashboard/career-copilot",
+    icon: BriefcaseBusiness,
+  },
+  {
+    label: "Analytics",
+    path: "/dashboard/analytics",
+    icon: BarChart3,
+  },
+  {
+    label: "Resume",
+    path: "/dashboard/resume",
+    icon: FileText,
+  },
+  {
+    label: "Settings",
+    path: "/dashboard/settings",
+    icon: Settings,
+  },
+  {
+    label: "Profile",
+    path: "/profile",
+    icon: UserRound,
+  },
+];
+
+const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
+  const { logout } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (isMobileOpen && onCloseMobile) {
+      onCloseMobile();
+    }
+  }, [location.pathname]);
+
+  const isItemActive = (navPath) => {
+    const current = location.pathname;
+
+    if (navPath === "/dashboard") {
+      return current === "/dashboard" || current === "/dashboard/";
+    }
+
+    if (navPath === "/dashboard/career-os") {
+      return (
+        current === "/career-os" ||
+        current === "/dashboard/career-os" ||
+        current.startsWith("/career-os/") ||
+        current.startsWith("/dashboard/career-os/")
+      );
+    }
+
+    if (navPath === "/dashboard/opportunity-monitor") {
+      return (
+        current === "/opportunity-monitor" ||
+        current === "/dashboard/opportunity-monitor" ||
+        current.startsWith("/opportunity-monitor/") ||
+        current.startsWith("/dashboard/opportunity-monitor/")
+      );
+    }
+
+    if (navPath === "/dashboard/career-planner") {
+      return (
+        current === "/career-planner" ||
+        current === "/dashboard/career-planner" ||
+        current.startsWith("/career-planner/") ||
+        current.startsWith("/dashboard/career-planner/")
+      );
+    }
+
+    if (navPath === "/opportunities") {
+      return (
+        current === "/opportunities" ||
+        current === "/dashboard/opportunities" ||
+        current.startsWith("/opportunities/") ||
+        current.startsWith("/dashboard/opportunities/")
+      );
+    }
+
+    if (navPath === "/dashboard/matches") {
+      return (
+        current === "/matches" ||
+        current === "/dashboard/matches" ||
+        current.startsWith("/matches/") ||
+        current.startsWith("/dashboard/matches/") ||
+        current === "/ai-search"
+      );
+    }
+
+    if (navPath === "/dashboard/applications") {
+      return (
+        current === "/applications" ||
+        current === "/dashboard/applications" ||
+        current.startsWith("/applications/") ||
+        current.startsWith("/dashboard/applications/")
+      );
+    }
+
+    if (navPath === "/dashboard/application-assistant") {
+      return (
+        current === "/application-assistant" ||
+        current === "/dashboard/application-assistant" ||
+        current.startsWith("/application-assistant/") ||
+        current.startsWith("/dashboard/application-assistant/")
+      );
+    }
+
+    if (navPath === "/dashboard/interview-coach") {
+      return (
+        current === "/interview-coach" ||
+        current === "/dashboard/interview-coach" ||
+        current.startsWith("/interview-coach/") ||
+        current.startsWith("/dashboard/interview-coach/")
+      );
+    }
+
+    if (navPath === "/dashboard/career-copilot") {
+      return (
+        current === "/career-copilot" ||
+        current === "/dashboard/career-copilot" ||
+        current.startsWith("/career-copilot/") ||
+        current.startsWith("/dashboard/career-copilot/")
+      );
+    }
+
+    if (navPath === "/dashboard/analytics") {
+      return (
+        current === "/analytics" ||
+        current === "/dashboard/analytics" ||
+        current.startsWith("/analytics/") ||
+        current.startsWith("/dashboard/analytics/")
+      );
+    }
+
+    if (navPath === "/dashboard/resume") {
+      return (
+        current === "/resume" ||
+        current === "/dashboard/resume" ||
+        current.startsWith("/resume/") ||
+        current.startsWith("/dashboard/resume/")
+      );
+    }
+
+    if (navPath === "/dashboard/settings") {
+      return (
+        current === "/settings" ||
+        current === "/dashboard/settings" ||
+        current.startsWith("/settings/") ||
+        current.startsWith("/dashboard/settings/")
+      );
+    }
+
+    if (navPath === "/profile") {
+      return (
+        current === "/profile" ||
+        current === "/dashboard/profile"
+      );
+    }
+
+    return false;
+  };
+
+  return (
+    <>
+      {isMobileOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`sidebar ${isMobileOpen ? "mobile-open" : ""}`}
+        role="navigation"
+        aria-label="Main Navigation"
+      >
+        <div className="brand">
+          <div className="brand-mark">A</div>
+
+          <div>
+            <h1>AgentScout</h1>
+            <span>AI Career Platform</span>
+          </div>
+
+          {onCloseMobile && (
+            <button
+              type="button"
+              className="mobile-close-btn"
+              onClick={onCloseMobile}
+              aria-label="Close navigation menu"
+            >
+              <X size={20} />
+            </button>
+          )}
+        </div>
+
+        <nav className="sidebar-nav">
+          {navigation.map(({ label, path, icon: Icon }) => {
+            const active = isItemActive(path);
+
+            return (
+              <NavLink
+                key={path}
+                to={path}
+                className={`nav-item ${active ? "active" : ""}`}
+              >
+                <Icon size={19} />
+                <span>{label}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        <div className="sidebar-footer">
+          <button
+            type="button"
+            onClick={logout}
+            className="nav-item logout-btn"
+            aria-label="Sign out of AgentScout"
+          >
+            <LogOut size={19} />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </aside>
+    </>
+  );
+};
+
+export default Sidebar;

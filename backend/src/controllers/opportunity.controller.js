@@ -1,5 +1,92 @@
 const mongoose = require('mongoose');
 const Opportunity = require('../models/Opportunity.model');
+const User = require('../models/User.model');
+const aiOpportunitySearchService = require('../services/aiOpportunitySearch.service');
+const recommendationService = require('../services/recommendation.service');
+
+/**
+ * Standardize opportunity document payload with canonical applyUrl.
+ */
+const formatOpportunity = (oppDoc) => {
+  if (!oppDoc) return null;
+  const opp = oppDoc.toObject ? oppDoc.toObject() : { ...oppDoc };
+  const rawUrl = (opp.applyUrl || opp.applicationUrl || opp.sourceUrl || opp.url || '').toString().trim();
+  return {
+    ...opp,
+    applyUrl: rawUrl,
+    applicationUrl: rawUrl
+  };
+};
+
+/**
+ * Helper to sanitize request body against Mongo operator injection.
+ */
+const checkNoMongoOperators = (obj) => {
+  if (!obj || typeof obj !== 'object') return;
+  for (const key of Object.keys(obj)) {
+    if (key.startsWith('$')) {
+      const err = new Error(`Invalid request parameter: Mongo operators (${key}) are forbidden`);
+      err.statusCode = 400;
+      throw err;
+    }
+    if (typeof obj[key] === 'object' && obj[key] !== null) {
+      checkNoMongoOperators(obj[key]);
+    }
+  }
+};
+
+/**
+ * Fetch personalized opportunity recommendations for authenticated candidate user.
+ * @route GET /api/opportunities/recommended
+ * @access Private
+ */
+const getRecommendedOpportunities = async (req, res, next) => {
+  try {
+    checkNoMongoOperators(req.query);
+
+    const userId = req.user.id || req.user._id;
+
+    const pageRaw = req.query.page !== undefined ? req.query.page : 1;
+    const page = parseInt(pageRaw, 10);
+    if (isNaN(page) || page < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Page parameter must be a positive integer greater than or equal to 1'
+      });
+    }
+
+    const limitRaw = req.query.limit !== undefined ? req.query.limit : 10;
+    const limit = parseInt(limitRaw, 10);
+    if (isNaN(limit) || limit < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Limit parameter must be a positive integer greater than or equal to 1'
+      });
+    }
+    if (limit > 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Limit parameter cannot exceed 50'
+      });
+    }
+
+    const result = await recommendationService.getRecommendedOpportunitiesForUser(userId, { page, limit });
+
+    const formattedRecs = (result.recommendations || []).map(r => ({
+      ...r,
+      opportunity: formatOpportunity(r.opportunity)
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: result.count,
+      pagination: result.pagination,
+      recommendations: formattedRecs
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 /**
  * Fetch paginated list of opportunities with filter, search, location, and sort capabilities.
@@ -14,15 +101,12 @@ const getOpportunities = async (req, res, next) => {
 
     const { search, type, remote, sort, location } = req.query;
 
-    // Base query filter: active opportunities only
     const filter = { isActive: true };
 
-    // 1. Role Type Filter (job | internship | research)
     if (type && ['job', 'internship', 'research'].includes(type.toLowerCase())) {
       filter.type = type.toLowerCase();
     }
 
-    // 2. Remote Preference Filter (true | false)
     if (remote !== undefined) {
       if (remote === 'true' || remote === '1') {
         filter.remote = true;
@@ -31,7 +115,6 @@ const getOpportunities = async (req, res, next) => {
       }
     }
 
-    // 3. Location Filter (case-insensitive regex matching)
     if (location && location.trim()) {
       filter.location = {
         $regex: location.trim(),
@@ -39,7 +122,6 @@ const getOpportunities = async (req, res, next) => {
       };
     }
 
-    // 4. Keyword Search Filter (title, company, description, requirements)
     if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
       filter.$or = [
@@ -50,7 +132,6 @@ const getOpportunities = async (req, res, next) => {
       ];
     }
 
-    // 5. Sorting Options
     let sortOptions = { postedAt: -1, createdAt: -1 };
     if (sort === 'oldest') {
       sortOptions = { postedAt: 1, createdAt: 1 };
@@ -58,13 +139,13 @@ const getOpportunities = async (req, res, next) => {
       sortOptions = { company: 1, title: 1 };
     }
 
-    // 6. Execute DB Query & Count
     const total = await Opportunity.countDocuments(filter);
-    const opportunities = await Opportunity.find(filter)
+    const rawOpportunities = await Opportunity.find(filter)
       .sort(sortOptions)
       .skip(skip)
       .limit(limit);
 
+    const opportunities = rawOpportunities.map(formatOpportunity);
     const pages = Math.ceil(total / limit) || 0;
 
     res.status(200).json({
@@ -84,6 +165,124 @@ const getOpportunities = async (req, res, next) => {
 };
 
 /**
+ * Search opportunities alias.
+ * @route GET /api/opportunities/search
+ * @access Public
+ */
+const searchOpportunities = async (req, res, next) => {
+  return getOpportunities(req, res, next);
+};
+
+/**
+ * Search opportunities tailored to authenticated candidate skills and profile preferences.
+ * @route GET /api/opportunities/search/personalized
+ * @access Private
+ */
+const searchPersonalizedOpportunities = async (req, res, next) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User profile not found'
+      });
+    }
+
+    const candidateSkills = (user.profile && Array.isArray(user.profile.skills))
+      ? user.profile.skills.map(s => String(s).trim().toLowerCase())
+      : [];
+    
+    const candidateLocation = (user.profile && user.profile.location)
+      ? user.profile.location.trim()
+      : '';
+
+    const filter = { isActive: true };
+
+    if (candidateSkills.length > 0) {
+      const skillRegexes = candidateSkills.map(s => new RegExp(s, 'i'));
+      filter.$or = [
+        { requirements: { $in: skillRegexes } },
+        { title: { $in: skillRegexes } },
+        { description: { $in: skillRegexes } }
+      ];
+    }
+
+    if (candidateLocation) {
+      if (!filter.$or) filter.$or = [];
+      filter.$or.push({ location: new RegExp(candidateLocation, 'i') });
+    }
+
+    const rawOpportunities = await Opportunity.find(filter)
+      .sort({ postedAt: -1, createdAt: -1 })
+      .limit(20);
+
+    const opportunities = rawOpportunities.map(formatOpportunity);
+
+    res.status(200).json({
+      success: true,
+      count: opportunities.length,
+      personalizedFor: user.email,
+      opportunities
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * AI-powered natural language opportunity search using Google Gemini.
+ * @route POST /api/opportunities/ai-search
+ * @access Private
+ */
+const aiSearchOpportunities = async (req, res, next) => {
+  try {
+    checkNoMongoOperators(req.body);
+
+    const queryInput = req.body ? (req.body.query || req.body.prompt || req.body.q) : undefined;
+
+    if (queryInput === undefined || queryInput === null || typeof queryInput !== 'string' || !queryInput.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Search query is required and must be a non-empty string'
+      });
+    }
+
+    const queryText = queryInput.trim();
+
+    if (queryText.length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: 'Search query exceeds maximum length of 500 characters'
+      });
+    }
+
+    const limit = req.body && req.body.limit ? parseInt(req.body.limit, 10) : 20;
+
+    const result = await aiOpportunitySearchService.searchAndRankOpportunities(queryText, limit);
+
+    const formattedOpps = (result.opportunities || []).map(formatOpportunity);
+
+    res.status(200).json({
+      success: true,
+      query: result.query,
+      interpretedFilters: result.interpretedFilters,
+      count: formattedOpps.length,
+      opportunities: formattedOpps
+    });
+  } catch (error) {
+    if (error.statusCode === 400) {
+      return res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+    next(error);
+  }
+};
+
+/**
  * Fetch detailed metadata for a single opportunity by ID.
  * @route GET /api/opportunities/:id
  * @access Public
@@ -92,7 +291,6 @@ const getOpportunityById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Validate Mongoose ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -111,7 +309,7 @@ const getOpportunityById = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      opportunity
+      opportunity: formatOpportunity(opportunity)
     });
   } catch (error) {
     next(error);
@@ -119,6 +317,10 @@ const getOpportunityById = async (req, res, next) => {
 };
 
 module.exports = {
+  getRecommendedOpportunities,
   getOpportunities,
+  searchOpportunities,
+  searchPersonalizedOpportunities,
+  aiSearchOpportunities,
   getOpportunityById
 };

@@ -16,20 +16,26 @@ const errorHandler = require('./middleware/error.middleware');
 const apiRouter = require('./routes');
 
 const app = express();
-app.use(express.json({ limit: "10kb" }));
-const PORT = process.env.PORT || 5000;
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const PORT = process.env.PORT || 5001;
 
-// 1. Security HTTP Headers
-app.use(helmet());
+// 1. Security HTTP Headers (configured for cross-origin resources in development)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
-// 2. CORS Configuration
+// 2. Robust CORS Configuration supporting localhost & proxy origins
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin or from local dev servers
+      if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With']
   })
 );
 

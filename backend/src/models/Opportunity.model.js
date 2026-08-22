@@ -38,6 +38,10 @@ const OpportunitySchema = new mongoose.Schema(
       type: String,
       default: 'Not disclosed'
     },
+    applyUrl: {
+      type: String,
+      default: ''
+    },
     applicationUrl: {
       type: String,
       default: ''
