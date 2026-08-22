@@ -1,196 +1,159 @@
 # AgentScout AI
 
-> **"Discover opportunities. Let AI find your match."**
-
-Developed for the **Scrape-Verse Hackathon**.
+> **"Your AI Career Operating System & Intelligent Job Search Agent"**
 
 ---
 
-## Project Overview
+## Executive Overview
 
-AgentScout AI is an end-to-end, AI-powered opportunity discovery platform engineered to automate how job seekers, interns, and researchers find relevant roles. By pairing **Bright Data Scraper Studio** with **Google Gemini AI**, AgentScout AI continuously discovers web opportunities, converts unorganized HTML data into validated JSON records in **MongoDB Atlas**, and evaluates candidates using semantic match scoring.
+**AgentScout AI** is a production-grade, full-stack AI Career Operating System built using the MERN stack (MongoDB Atlas, Express.js, React, Node.js) integrated with **Google Gemini AI** and **Bright Data Scraper Studio**.
 
----
-
-## Problem
-
-Job seekers face fragmentation across dozens of hiring portals, company career pages, and research boards. Manual search requires hours of filtering through irrelevant listings, parsing vague job descriptions, and manually evaluating skill overlap. Existing job alerts rely on rigid keyword queries rather than contextual understanding.
+AgentScout transforms job searching from manual browsing into an autonomous, decision-oriented command center. It continuously monitors market opportunities, ranks jobs by candidate fit, computes application readiness, detects career blockers, conducts interactive mock technical interviews, generates tailored application materials, and provides a 7-day adaptive career execution plan.
 
 ---
 
-## Solution
+## Core Capabilities & Implemented Modules
 
-AgentScout AI eliminates manual job hunting through automated web scraping and intelligent context-matching:
-1. **Automated Opportunity Ingestion:** Custom scrapers built via Bright Data harvest public opportunity data reliably without IP blocking or bot detection failures.
-2. **Normalized Data Repository:** Public web listings are converted into clean, validated schema records in MongoDB Atlas.
-3. **Contextual AI Recommendation:** Google Gemini AI analyzes candidate profiles (skills, experience, location) against role requirements to produce personalized match scores and improvement recommendations.
+### 🧠 AI Career Operating System (Phase 17.0)
+- **Composite Career Health Score (0–100):** Weighted benchmark combining Profile, Resume ATS Quality, Opportunity Fit, Application Pipeline, Interview Readiness, Skill Coverage, and Portfolio Strength.
+- **Career Stage Detection:** Classifies candidate trajectory into 8 stages (`PROFILE_BUILDING`, `RESUME_OPTIMIZATION`, `JOB_DISCOVERY`, `APPLICATION_READY`, `ACTIVE_APPLICATION`, `INTERVIEW_PREPARATION`, `OFFER_READY`, `CAREER_ACCELERATION`).
+- **Single Highest-Impact Next Action:** Identifies the single most impactful action candidate should take right now.
+- **Career Risk Engine:** Detects 10 distinct career blockers (low application conversion, incomplete profile, ATS below target, unsubmitted excellent matches) with severity ratings and deep links.
+- **Career Momentum:** Calculates activity velocity (0–100 score with `UP`, `STABLE`, `DOWN` trends).
 
----
+### 🛰️ AI Opportunity Monitor & Job Search Agent (Phase 16.15)
+- **Continuous Opportunity Evaluation:** Ranks new market postings against profile, resume, skill gaps, and interview readiness.
+- **Alert Prioritization & Duplicate Protection:** High-priority notifications for 90%+ Excellent Matches and 75%+ Strong Matches without repeated spamming.
+- **Opportunity Watchlist & Digest:** Daily market scan summaries and saved opportunity tracking.
 
-## Core Features
+### 🎯 AI Career Action Planner (Phase 16.14)
+- **Deterministic Action Engine:** Daily priority list, priority buckets, and 7-day execution schedule.
+- **Milestones Tracker:** Interactive progress tracking for Profile 100%, Resume ATS > 80%, 5+ Applications, and Interview Readiness > 80%.
 
-- **Automated Web Scraping:** Scheduled and on-demand scraping via Bright Data Scraper Studio.
-- **AI-Powered Match Engine:** Gemini AI computes candidate-role fit percentages and actionable suggestions.
-- **Interactive 3D Landing Page:** Immersive hero visualizer built with React Three Fiber, Drei, and Three.js.
-- **Candidate Workspace:** Personal dashboard to manage skills, track match ratings, and save target roles.
-- **Admin Control Panel:** Operations hub to trigger scraper runs, manage opportunity listings, inspect system analytics, and audit users.
-- **Secure Session Management:** Password hashing with `bcryptjs` and HTTP-only JWT cookies.
+### 🎤 AI Interview Coach & Mock Interview Intelligence (Phase 16.13)
+- **Interactive Technical & STAR Behavioral Mock Sessions:** Role-specific question sets.
+- **Readiness Scoring & Feedback:** Immediate AI evaluation of technical depth, communication clarity, problem-solving, and STAR methodology.
+
+### ✍️ AI Application Assistant & Application Readiness (Phase 16.12)
+- **Application Readiness Scoring:** Measures match score, resume alignment, skill coverage, and experience fit.
+- **Tailored Cover Letters & Application Answers:** Role-specific cover letter generator and customized answer suggestions.
+
+### 📄 Candidate Resume & Portfolio Intelligence (Phase 16.11)
+- **AgentScout ATS Scoring Engine:** Structural analysis, quantifiable achievement auditing, and skill coverage breakdown.
+- **Portfolio & Project Evidence:** GitHub and live portfolio link integration.
+
+### ⚙️ Settings, Preferences & Security (Phase 16.10)
+- **Account & Job Preferences:** Target roles, preferred locations, work modes, and minimum salary.
+- **Notification & Privacy Control:** Toggle alert rules and discovery settings.
+- **Security & Session Management:** Password updating with current password verification and complete account deletion.
+
+### 📊 Career Analytics & Progress Intelligence (Phase 16.9)
+- **Funnel & Match Analytics:** Application status distribution, response conversion rates, match distribution, and downloadable CSV report exports.
+
+### 🔔 Notifications & Activity Center (Phase 16.8)
+- **Real-Time Notification Hub:** Unread indicators, category filtering, mark as read/unread, and deep-link navigation.
+
+### 🤖 Career Copilot (Phase 16.7)
+- **Context-Aware Career Chat:** Multi-turn conversational AI powered by Google Gemini AI with fallback data-driven intelligence.
 
 ---
 
 ## Technology Stack
 
 ### Frontend
-- **Framework:** React, Vite, JavaScript
-- **Styling:** Tailwind CSS, Custom CSS variables
+- **Framework:** React 18, Vite
 - **Routing:** React Router v6
-- **State & HTTP:** Axios
-- **Animations & 3D:** Framer Motion, Three.js, React Three Fiber, Drei
+- **HTTP Client:** Axios (with `withCredentials: true`)
 - **Icons:** Lucide React
+- **Styling:** Custom CSS design system (Dark/Purple glassmorphism architecture)
 
 ### Backend
 - **Runtime:** Node.js, Express.js
 - **Database:** MongoDB Atlas, Mongoose ODM
-- **Security & Auth:** JWT, bcryptjs, HTTP-only cookies
-- **AI Engine:** Google Gemini API
+- **Authentication:** JWT, bcryptjs, HTTP-only SameSite cookies
+- **AI Integration:** Google Gemini API
 - **Scraper Engine:** Bright Data Scraper Studio
 
 ---
 
-## Architecture
-
-The system uses a decoupled client-server architecture with an external scraping and AI analysis pipeline:
+## Project Structure
 
 ```
-PUBLIC WEB DATA
-      ↓
-BRIGHT DATA SCRAPER STUDIO
-      ↓
-STRUCTURED JSON
-      ↓
-BACKEND API
-      ↓
-VALIDATION + NORMALIZATION
-      ↓
-MONGODB ATLAS
-      ↓
-AI MATCHING
-      ↓
-USER DASHBOARD
-```
-
-For full details, see [docs/ARCHITECTURE.md](file:///Users/prashamjain/Desktop/PROJECTS/AgentScout-AI/docs/ARCHITECTURE.md).
-
----
-
-## Bright Data Integration
-
-AgentScout AI utilizes **Bright Data Scraper Studio** as its primary ingestion engine. Scrapers target public career platforms to extract raw listings, transforming unstructured text into structured payloads containing job title, company name, location, role type, raw requirements, and original application URLs. The backend validates these payloads prior to database persistence.
-
----
-
-## AI Matching
-
-Matching goes beyond basic keyphrase lookup. The **Google Gemini API** processes candidate profile attributes alongside parsed opportunity requirements to perform semantic evaluation. The output includes:
-- Overall Compatibility Score (0–100%)
-- Core Skill Alignment Matrix
-- Profile Optimization Recommendations
-
----
-
-## Authentication
-
-Authentication is backed by JWT credentials stored in `HttpOnly`, `SameSite` cookies for security:
-
-```
-REGISTER / LOGIN
-      ↓
-EXPRESS BACKEND
-      ↓
-BCRYPT PASSWORD HASHING
-      ↓
-JWT
-      ↓
-HTTP-ONLY COOKIE
-      ↓
-AUTHENTICATED USER
+AgentScout-AI/
+├── backend/
+│   ├── src/
+│   │   ├── config/          # Database, Gemini & Bright Data configs
+│   │   ├── controllers/     # Express route handlers
+│   │   ├── middleware/      # Authentication & authorization middleware
+│   │   ├── models/          # Mongoose database schemas
+│   │   ├── routes/          # Express API route declarations
+│   │   └── services/        # AI engines, match scoring & core business logic
+│   ├── .env.example
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # UI components by domain (career-os, opportunity-monitor, etc.)
+│   │   ├── context/         # AuthContext provider
+│   │   ├── pages/           # Main workspace pages
+│   │   ├── services/        # Axios API client modules
+│   │   └── utils/           # URL validation and formatting helpers
+│   ├── .env.example
+│   ├── vite.config.js
+│   └── package.json
+├── .env.example
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## User Dashboard
-
-The candidate interface includes:
-- **Opportunity Feed:** Dynamic stream of jobs/internships sorted by AI match confidence.
-- **Profile Configuration:** Input skills, location preferences, and career goals.
-- **Saved Opportunities:** Bookmarked list of target roles with quick external application links.
-
----
-
-## Admin Dashboard
-
-The platform admin panel provides management capabilities:
-- **Scraper Control:** Trigger new Bright Data scraping workflows and inspect run status logs.
-- **Opportunity Management:** Review, approve, or remove indexed roles.
-- **User Administration:** View registered candidate profiles and system statistics.
-- **Platform Analytics:** Real-time metrics on scrapers, AI match requests, and user activity.
-
----
-
-## Development Roadmap
-
-- **Phase 0 — Foundation** *(Current)*
-- **Phase 1 — Backend Foundation**
-- **Phase 2 — MongoDB Atlas**
-- **Phase 3 — Authentication**
-- **Phase 4 — User Profile**
-- **Phase 5 — Opportunity Model**
-- **Phase 6 — Opportunity APIs**
-- **Phase 7 — Bright Data Scraper**
-- **Phase 8 — AI Matching**
-- **Phase 9 — Saved Opportunities**
-- **Phase 10 — Frontend Foundation**
-- **Phase 11 — Frontend Authentication**
-- **Phase 12 — Landing Page**
-- **Phase 13 — Opportunities UI**
-- **Phase 14 — User Dashboard**
-- **Phase 15 — User Profile UI**
-- **Phase 16 — AI Matching UI**
-- **Phase 17 — Admin Backend**
-- **Phase 18 — Admin Dashboard**
-- **Phase 19 — Three.js Experience**
-- **Phase 20 — Full Integration**
-- **Phase 21 — Security Audit**
-- **Phase 22 — Analytics**
-- **Phase 23 — QA**
-- **Phase 24 — Deployment**
-- **Phase 25 — Hackathon Documentation**
-- **Phase 26 — Demo Preparation**
-- **Phase 27 — Final Submission**
-
----
-
-## Security
-
-- Secrets stored strictly in local `.env` files (excluded from source control via `.gitignore`).
-- Password hashing utilizing `bcryptjs`.
-- Session tokens passed strictly via `HttpOnly` and `SameSite` cookie flags.
-- Comprehensive request validation and rate limiting on sensitive routes.
-
----
-
-## Local Development
+## Local Installation & Setup
 
 ### Prerequisites
 - Node.js (v18+)
-- npm or yarn
+- MongoDB Atlas database instance or local MongoDB server
 
-### Setup (Future Phases)
+### Installation Steps
+
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/PrashamJain1318/AgentScout-AI.git
+   cd AgentScout-AI
+   ```
+
+2. **Setup Backend:**
+   ```bash
+   cd backend
+   npm install
+   cp .env.example .env
+   # Edit .env with your MONGODB_URI, JWT_SECRET, and GEMINI_API_KEY
+   npm start
+   ```
+
+3. **Setup Frontend:**
+   ```bash
+   cd ../frontend
+   npm install
+   cp .env.example .env
+   npm run dev
+   ```
+
+4. **Access Platform:**
+   Open `http://localhost:5173` in your browser.
+
+---
+
+## Production Build
+
+To verify production frontend build:
 ```bash
-# Clone the repository
-git clone https://github.com/user/AgentScout-AI.git
-cd AgentScout-AI
-
-# Install dependencies (Phase 1+)
-# setup commands will be provided in subsequent phases
+cd frontend
+npm run build
 ```
+
+---
+
+## Security & Privacy
+- Sensitive credentials must be stored strictly in `.env` files (excluded from Git tracking via `.gitignore`).
+- Identity and authorization are enforced exclusively via server-side HTTP-only cookie JWTs (`req.user.id`).
+- External application URLs undergo protocol and hostname validation prior to client navigation.
