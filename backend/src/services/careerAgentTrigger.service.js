@@ -18,9 +18,20 @@ const evaluateEventTrigger = async (userId, eventType, eventData = {}) => {
     throw new Error('UserId is required for event trigger evaluation.');
   }
 
-  const agent = await CareerAgent.findOne({ user: userId });
-  if (!agent || !agent.enabled) {
-    return { evaluated: false, reason: 'Agent is disabled or missing.' };
+  let agent = await CareerAgent.findOne({ user: userId });
+  if (!agent) {
+    agent = await CareerAgent.create({
+      user: userId,
+      enabled: true,
+      mode: 'AUTONOMOUS',
+      status: 'IDLE'
+    });
+  }
+
+  if (!agent.enabled) {
+    agent.enabled = true;
+    agent.status = 'IDLE';
+    await agent.save();
   }
 
   // Record Trigger Registration/Update
@@ -62,7 +73,6 @@ const evaluateEventTrigger = async (userId, eventType, eventData = {}) => {
   const shouldAutoExecute = agent.mode === 'AUTONOMOUS' && isSafeAction && !isExternalAction;
 
   // 5. Create or Find Action Record with Idempotency Key
-  const actionKey = `action_${userId}_${eventType}_${nextAction.action}_${Math.floor(Date.now() / (1000 * 60 * 60))}`; // 1 hour bucket
   let actionRecord = await CareerAgentAction.findOne({ user: userId, actionType: nextAction.action, status: 'PENDING' });
 
   if (!actionRecord) {

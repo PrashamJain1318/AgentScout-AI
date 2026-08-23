@@ -127,11 +127,15 @@ const CareerAgent = () => {
 
   const handleEvaluateTriggers = async () => {
     setEvaluating(true);
+    setErrorNotice(null);
     try {
-      await evaluateAgent('SCHEDULED_REVIEW');
-      fetchAgentDashboardData();
+      const res = await evaluateAgent('SCHEDULED_REVIEW');
+      if (res?.data) {
+        await fetchAgentDashboardData();
+      }
     } catch (err) {
-      setErrorNotice('Failed to evaluate triggers.');
+      console.error('Error evaluating triggers:', err);
+      setErrorNotice(err.response?.data?.message || err.message || 'Failed to evaluate triggers.');
     } finally {
       setEvaluating(false);
     }
