@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -44,10 +45,11 @@ const PageSuspenseFallback = () => (
 function App() {
   return (
     <GlobalErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          <Suspense fallback={<PageSuspenseFallback />}>
-            <Routes>
+      <ThemeProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <Suspense fallback={<PageSuspenseFallback />}>
+              <Routes>
 
               {/* Public */}
               <Route
@@ -284,7 +286,8 @@ function App() {
           </Suspense>
         </AuthProvider>
       </BrowserRouter>
-    </GlobalErrorBoundary>
+    </ThemeProvider>
+  </GlobalErrorBoundary>
   );
 }
 

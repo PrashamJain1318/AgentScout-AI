@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import AuthVerification from "../components/auth/AuthVerification";
+import ThemeToggle from "../components/layout/ThemeToggle";
 
 const Auth3DCanvas = lazy(() => import("../components/auth/Auth3DCanvas"));
 
@@ -98,7 +99,10 @@ const Login = () => {
               <span className="brand-mark">A</span>
               <span className="brand-name">AgentScout AI</span>
             </div>
-            <span className="platform-tag">AI Career Platform</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <ThemeToggle compact={true} />
+              <span className="platform-tag">AI Career Platform</span>
+            </div>
           </div>
 
           <div className="marketing-hero">

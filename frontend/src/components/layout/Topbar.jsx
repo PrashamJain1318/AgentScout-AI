@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Menu } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "../notifications/NotificationBell";
+import ThemeToggle from "./ThemeToggle";
 
 const pageTitles = {
   "/dashboard": "Dashboard Overview",
@@ -62,6 +63,7 @@ const Topbar = ({ onToggleMobile, isMobileOpen }) => {
       </div>
 
       <div className="topbar-actions">
+        <ThemeToggle />
         <NotificationBell />
 
         <button
