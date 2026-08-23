@@ -85,7 +85,7 @@ const CareerCore = ({
         category: 'opportunities',
         score: readiness.opportunities || 85,
         deepLink: '/dashboard/opportunities',
-        position: [radius * Math.cos(angles[2]), radius * Math.sin(angles[2]) * 0.7, 0.3]
+        position: [radius * Math.cos(angles[3]), radius * Math.sin(angles[3]) * 0.7, 0.3]
       },
       {
         id: 4,
@@ -93,7 +93,7 @@ const CareerCore = ({
         category: 'applications',
         score: readiness.application || 65,
         deepLink: '/dashboard/applications',
-        position: [radius * Math.cos(angles[3]), radius * Math.sin(angles[3]) * 0.7, -0.4]
+        position: [radius * Math.cos(angles[2]), radius * Math.sin(angles[2]) * 0.7, -0.4]
       },
       {
         id: 5,
@@ -150,6 +150,54 @@ const CareerCore = ({
             />
           </WebGLErrorBoundary>
         )}
+      </div>
+
+      {/* PILLAR BADGES OVERLAY GRID */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50px',
+          left: '12px',
+          right: '12px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '6px',
+          justifyContent: 'center',
+          zIndex: 5,
+          pointerEvents: 'none'
+        }}
+      >
+        {nodes.map((node) => {
+          const isHovered = hoveredNodeId === node.id;
+          const isNext = nextActionCategory && node.category === nextActionCategory;
+
+          return (
+            <div
+              key={node.id}
+              onClick={() => navigate(node.deepLink)}
+              onMouseEnter={() => setHoveredNodeId(node.id)}
+              onMouseLeave={() => setHoveredNodeId(null)}
+              style={{
+                pointerEvents: 'auto',
+                cursor: 'pointer',
+                fontSize: '10px',
+                fontWeight: 700,
+                color: isNext ? '#fbbf24' : isHovered ? '#34d399' : '#e4e4e7',
+                background: isHovered ? 'rgba(16, 185, 129, 0.2)' : isNext ? 'rgba(245, 158, 11, 0.2)' : 'rgba(18, 18, 20, 0.65)',
+                border: isHovered ? '1px solid #10b981' : isNext ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
+                padding: '3px 8px',
+                borderRadius: '12px',
+                backdropFilter: 'blur(8px)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <span>{node.label}</span>
+              <span style={{ marginLeft: '4px', color: '#818cf8', fontWeight: 800 }}>
+                {node.score}%
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {/* BOTTOM ACTION FOOTER OVERLAY */}
