@@ -7,6 +7,7 @@ import MockInterview from "../components/interview/MockInterview";
 import InterviewResults from "../components/interview/InterviewResults";
 import InterviewHistory from "../components/interview/InterviewHistory";
 import InterviewPreparationPlan from "../components/interview/InterviewPreparationPlan";
+import { getCachedData, setCachedData } from "../services/api";
 
 import { getOpportunities } from "../services/opportunities.api";
 import {
@@ -15,40 +16,53 @@ import {
   getInterviewSession
 } from "../services/interview.api";
 
+const CACHE_KEY = "interview-coach-data";
+
 const InterviewCoach = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const targetOppId = searchParams.get("opportunity");
+  const cached = getCachedData(CACHE_KEY);
 
-  const [opportunities, setOpportunities] = useState([]);
+  const [opportunities, setOpportunities] = useState(cached?.data?.opportunities || []);
   const [selectedOpp, setSelectedOpp] = useState(null);
-  const [readinessData, setReadinessData] = useState(null);
+  const [readinessData, setReadinessData] = useState(cached?.data?.readinessData || null);
 
   const [viewState, setViewState] = useState("setup"); // setup | live | results | details
   const [activeSession, setActiveSession] = useState(null);
   const [sessionResults, setSessionResults] = useState(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cached?.data);
   const [sessionLoading, setSessionLoading] = useState(false);
   const [errorNotice, setErrorNotice] = useState(null);
 
-  // 1. Load available opportunities & candidate readiness metrics
+  // 1. Load available opportunities & candidate readiness metrics in parallel
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      if (!cached?.data) setLoading(true);
       setErrorNotice(null);
 
       try {
-        const [oppRes, readRes] = await Promise.all([
+        const results = await Promise.allSettled([
           getOpportunities({ limit: 30 }),
           getInterviewReadiness(targetOppId || "")
         ]);
 
-        const list = oppRes.opportunities || oppRes.data || [];
-        setOpportunities(list);
-        setReadinessData(readRes.data || null);
+        const oppRes = results[0].status === "fulfilled" ? results[0].value : null;
+        const readRes = results[1].status === "fulfilled" ? results[1].value : null;
 
-        if (targetOppId) {
+        const list = oppRes?.opportunities || oppRes?.data || opportunities;
+        const readData = readRes?.data || readinessData;
+
+        setOpportunities(list || []);
+        setReadinessData(readData || null);
+
+        setCachedData(CACHE_KEY, {
+          opportunities: list,
+          readinessData: readData
+        });
+
+        if (targetOppId && Array.isArray(list)) {
           const preSelected = list.find((o) => (o._id || o.id) === targetOppId);
           if (preSelected) {
             setSelectedOpp(preSelected);
@@ -104,7 +118,7 @@ const InterviewCoach = () => {
 
   return (
     <div className="resume-page-container">
-      {/* Header Banner */}
+      {/* 1. Header Banner Shell Renders Immediately */}
       <div className="application-assistant-header flex-between">
         <div>
           <div className="header-badge">
@@ -137,56 +151,53 @@ const InterviewCoach = () => {
         </div>
       )}
 
-      {loading ? (
-        <div className="skeleton-details-body" style={{ minHeight: "360px" }} />
-      ) : (
-        <div className="details-2col-layout">
-          {/* Main Workspace Column */}
-          <div className="details-main-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            {/* Top Readiness Score Intelligence Gauge */}
-            <InterviewReadiness readinessData={readinessData || {}} />
+      {/* 2. Main Workspace Shell Renders Immediately */}
+      <div className="details-2col-layout">
+        {/* Main Workspace Column */}
+        <div className="details-main-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          {/* Top Readiness Score Intelligence Gauge */}
+          <InterviewReadiness readinessData={readinessData || {}} />
 
-            {/* Dynamic View State Component */}
-            {viewState === "setup" && (
-              <InterviewSetup
-                opportunities={opportunities}
-                selectedOpp={selectedOpp}
-                onStart={handleStartSession}
-                loading={sessionLoading}
-              />
-            )}
-
-            {viewState === "live" && activeSession && (
-              <MockInterview
-                sessionData={activeSession}
-                onCompleteSession={handleCompleteSession}
-              />
-            )}
-
-            {viewState === "results" && sessionResults && (
-              <InterviewResults
-                results={sessionResults}
-                onRetry={() => setViewState("setup")}
-                onViewHistory={() => {
-                  const histElem = document.getElementById("interview-history-section");
-                  if (histElem) histElem.scrollIntoView({ behavior: "smooth" });
-                }}
-              />
-            )}
-
-            {/* Preparation Roadmap Plan */}
-            <InterviewPreparationPlan />
-          </div>
-
-          {/* Side Column: Session History */}
-          <div className="details-side-column" id="interview-history-section" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            <InterviewHistory
-              onSelectSession={handleSelectHistorySession}
-              onRetry={() => setViewState("setup")}
+          {/* Dynamic View State Component */}
+          {viewState === "setup" && (
+            <InterviewSetup
+              opportunities={opportunities}
+              selectedOpp={selectedOpp}
+              onStart={handleStartSession}
+              loading={sessionLoading}
             />
-          </div>
+          )}
+
+          {viewState === "live" && activeSession && (
+            <MockInterview
+              sessionData={activeSession}
+              onCompleteSession={handleCompleteSession}
+            />
+          )}
+
+          {viewState === "results" && sessionResults && (
+            <InterviewResults
+              results={sessionResults}
+              onRetry={() => setViewState("setup")}
+              onViewHistory={() => {
+                const histElem = document.getElementById("interview-history-section");
+                if (histElem) histElem.scrollIntoView({ behavior: "smooth" });
+              }}
+            />
+          )}
+
+          {/* Preparation Roadmap Plan */}
+          <InterviewPreparationPlan />
         </div>
-      )}
+
+        {/* Side Column: Session History */}
+        <div className="details-side-column" id="interview-history-section" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          <InterviewHistory
+            onSelectSession={handleSelectHistorySession}
+            onRetry={() => setViewState("setup")}
+          />
+        </div>
+      </div>
     </div>
   );
 };

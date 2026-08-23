@@ -6,7 +6,8 @@ import OpportunityDigest from "../components/opportunity-monitor/OpportunityDige
 import OpportunityRecommendationGrid from "../components/opportunity-monitor/OpportunityRecommendationGrid";
 import Watchlist from "../components/opportunity-monitor/Watchlist";
 import MonitorPreferences from "../components/opportunity-monitor/MonitorPreferences";
-import { MonitorEmptyState, MonitorSkeleton } from "../components/opportunity-monitor/MonitorStates";
+import { MonitorEmptyState } from "../components/opportunity-monitor/MonitorStates";
+import { getCachedData, setCachedData } from "../services/api";
 
 import {
   getMonitor,
@@ -21,32 +22,46 @@ import {
   dismissOpportunity
 } from "../services/opportunityMonitor.api";
 
-const OpportunityMonitor = () => {
-  const [monitor, setMonitor] = useState(null);
-  const [recommendations, setRecommendations] = useState([]);
-  const [digest, setDigest] = useState(null);
+const CACHE_KEY = "opportunity-monitor-data";
 
-  const [loading, setLoading] = useState(true);
+const OpportunityMonitor = () => {
+  const cached = getCachedData(CACHE_KEY);
+
+  const [monitor, setMonitor] = useState(cached?.data?.monitor || null);
+  const [recommendations, setRecommendations] = useState(cached?.data?.recommendations || []);
+  const [digest, setDigest] = useState(cached?.data?.digest || null);
+
+  const [loading, setLoading] = useState(!cached?.data);
   const [running, setRunning] = useState(false);
   const [savingPref, setSavingPref] = useState(false);
   const [errorNotice, setErrorNotice] = useState(null);
 
   const fetchData = async () => {
-    setLoading(true);
+    if (!cached?.data) setLoading(true);
     setErrorNotice(null);
 
     try {
-      const [monRes, recRes, digRes] = await Promise.all([
+      const results = await Promise.allSettled([
         getMonitor(),
         getRecommendations(),
         getDigest()
       ]);
 
-      setMonitor(monRes.data || null);
-      setRecommendations(recRes.data || []);
-      setDigest(digRes.data || null);
+      const monRes = results[0].status === "fulfilled" ? results[0].value?.data : monitor;
+      const recRes = results[1].status === "fulfilled" ? results[1].value?.data : recommendations;
+      const digRes = results[2].status === "fulfilled" ? results[2].value?.data : digest;
+
+      setMonitor(monRes || null);
+      setRecommendations(recRes || []);
+      setDigest(digRes || null);
+
+      setCachedData(CACHE_KEY, {
+        monitor: monRes,
+        recommendations: recRes,
+        digest: digRes
+      });
     } catch (err) {
-      setErrorNotice("Failed to load opportunity monitor context.");
+      setErrorNotice("Failed to refresh opportunity monitor data.");
     } finally {
       setLoading(false);
     }
@@ -63,16 +78,7 @@ const OpportunityMonitor = () => {
 
     try {
       await runMonitor();
-      // Refresh recommendations and digest
-      const [monRes, recRes, digRes] = await Promise.all([
-        getMonitor(),
-        getRecommendations(),
-        getDigest()
-      ]);
-
-      setMonitor(monRes.data || null);
-      setRecommendations(recRes.data || []);
-      setDigest(digRes.data || null);
+      await fetchData();
     } catch (err) {
       setErrorNotice("Unable to run opportunity monitoring engine.");
     } finally {
@@ -150,7 +156,7 @@ const OpportunityMonitor = () => {
 
   return (
     <div className="resume-page-container">
-      {/* Header */}
+      {/* 1. Header Shell Renders Immediately */}
       <MonitorHeader
         monitor={monitor || {}}
         onToggleMonitor={handleToggleMonitor}
@@ -165,54 +171,53 @@ const OpportunityMonitor = () => {
         </div>
       )}
 
-      {loading ? (
-        <MonitorSkeleton />
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Monitor Status Banner */}
-          <MonitorStatus monitor={monitor || {}} digest={digest || {}} />
+      {/* 2. Main Layout Shell Renders Immediately */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {/* Monitor Status Banner */}
+        <MonitorStatus monitor={monitor || {}} digest={digest || {}} />
 
-          {/* Daily Digest */}
-          <OpportunityDigest digest={digest || {}} />
+        {/* Daily Digest */}
+        <OpportunityDigest digest={digest || {}} />
 
-          {/* 2-Column Layout */}
-          <div className="details-2col-layout">
-            {/* Main Column: Opportunity Recommendations Grid */}
-            <div className="details-main-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              {recommendations.length === 0 ? (
-                <MonitorEmptyState onRun={handleRunMonitor} />
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div className="section-header-flex">
-                    <div>
-                      <span className="eyebrow">RANKED MATCHES</span>
-                      <h3>Top Matched Opportunities ({recommendations.length})</h3>
-                    </div>
+        {/* 2-Column Layout Shell */}
+        <div className="details-2col-layout">
+          {/* Main Column */}
+          <div className="details-main-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            {loading && recommendations.length === 0 ? (
+              <div className="skeleton-details-body" style={{ minHeight: "280px" }} />
+            ) : recommendations.length === 0 ? (
+              <MonitorEmptyState onRun={handleRunMonitor} />
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div className="section-header-flex">
+                  <div>
+                    <span className="eyebrow">RANKED MATCHES</span>
+                    <h3>Top Matched Opportunities ({recommendations.length})</h3>
                   </div>
-
-                  <OpportunityRecommendationGrid
-                    recommendations={recommendations}
-                    onWatch={handleWatch}
-                    onUnwatch={handleUnwatch}
-                    onDismiss={handleDismiss}
-                  />
                 </div>
-              )}
-            </div>
 
-            {/* Side Column: Watchlist & Monitor Preferences */}
-            <div className="details-side-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <Watchlist items={recommendations} onUnwatch={handleUnwatch} />
+                <OpportunityRecommendationGrid
+                  recommendations={recommendations}
+                  onWatch={handleWatch}
+                  onUnwatch={handleUnwatch}
+                  onDismiss={handleDismiss}
+                />
+              </div>
+            )}
+          </div>
 
-              <MonitorPreferences
-                monitor={monitor || {}}
-                onSave={handleSavePreferences}
-                saving={savingPref}
-              />
-            </div>
+          {/* Side Column */}
+          <div className="details-side-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <Watchlist items={recommendations} onUnwatch={handleUnwatch} />
+
+            <MonitorPreferences
+              monitor={monitor || {}}
+              onSave={handleSavePreferences}
+              saving={savingPref}
+            />
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

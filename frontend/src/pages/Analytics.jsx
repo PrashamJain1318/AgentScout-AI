@@ -24,6 +24,7 @@ import SkillAnalytics from "../components/analytics/SkillAnalytics";
 import ActivityAnalytics from "../components/analytics/ActivityAnalytics";
 import CareerInsights from "../components/analytics/CareerInsights";
 import AnalyticsSkeleton from "../components/analytics/AnalyticsSkeleton";
+import { getCachedData, setCachedData } from "../services/api";
 import {
   getAnalyticsOverview,
   getApplicationAnalytics,
@@ -38,19 +39,22 @@ import { getPlannerOverview } from "../services/careerPlanner.api";
 import { getDigest } from "../services/opportunityMonitor.api";
 import { getSnapshot as getOSSnapshot } from "../services/careerOS.api";
 
+const CACHE_KEY = "analytics-overview-data";
+
 const Analytics = () => {
   const navigate = useNavigate();
+  const cached = getCachedData(CACHE_KEY);
 
-  const [overview, setOverview] = useState(null);
-  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [overview, setOverview] = useState(cached?.data?.overview || null);
+  const [overviewLoading, setOverviewLoading] = useState(!cached?.data?.overview);
   const [overviewError, setOverviewError] = useState(null);
 
-  const [applications, setApplications] = useState(null);
-  const [appLoading, setAppLoading] = useState(true);
+  const [applications, setApplications] = useState(cached?.data?.applications || null);
+  const [appLoading, setAppLoading] = useState(!cached?.data?.applications);
   const [appError, setAppError] = useState(null);
 
-  const [matches, setMatches] = useState(null);
-  const [matchLoading, setMatchLoading] = useState(true);
+  const [matches, setMatches] = useState(cached?.data?.matches || null);
+  const [matchLoading, setMatchLoading] = useState(!cached?.data?.matches);
   const [matchError, setMatchError] = useState(null);
 
   const [skills, setSkills] = useState(null);
@@ -72,11 +76,13 @@ const Analytics = () => {
 
   // Independent API fetchers for fault tolerance
   const fetchOverview = async () => {
-    setOverviewLoading(true);
+    if (!cached?.data?.overview) setOverviewLoading(true);
     setOverviewError(null);
     try {
       const res = await getAnalyticsOverview();
-      setOverview(res.data || res.overview || null);
+      const val = res.data || res.overview || null;
+      setOverview(val);
+      setCachedData(CACHE_KEY, { ...cached?.data, overview: val });
     } catch (err) {
       setOverviewError("Failed to load overview metrics.");
     } finally {
@@ -85,11 +91,13 @@ const Analytics = () => {
   };
 
   const fetchAppAnalytics = async () => {
-    setAppLoading(true);
+    if (!cached?.data?.applications) setAppLoading(true);
     setAppError(null);
     try {
       const res = await getApplicationAnalytics();
-      setApplications(res.data || res.applications || null);
+      const val = res.data || res.applications || null;
+      setApplications(val);
+      setCachedData(CACHE_KEY, { ...cached?.data, applications: val });
     } catch (err) {
       setAppError("Failed to load application analytics.");
     } finally {
@@ -98,11 +106,13 @@ const Analytics = () => {
   };
 
   const fetchMatchAnalyticsData = async () => {
-    setMatchLoading(true);
+    if (!cached?.data?.matches) setMatchLoading(true);
     setMatchError(null);
     try {
       const res = await getMatchAnalytics();
-      setMatches(res.data || res.matches || null);
+      const val = res.data || res.matches || null;
+      setMatches(val);
+      setCachedData(CACHE_KEY, { ...cached?.data, matches: val });
     } catch (err) {
       setMatchError("Failed to load match intelligence.");
     } finally {
@@ -255,7 +265,7 @@ const Analytics = () => {
   return (
     <div className="analytics-page">
 
-      {/* Header Bar */}
+      {/* Header Bar Shell Renders Immediately */}
       <div className="analytics-header-bar flex-between">
         <div>
           <div className="header-badge">
@@ -279,7 +289,7 @@ const Analytics = () => {
         </button>
       </div>
 
-      {/* Overview KPI Grid */}
+      {/* Overview KPI Grid Shell Renders Immediately */}
       <div className="kpi-grid analytics-kpi-grid">
         <div className="kpi-card">
           <div className="kpi-icon-wrapper app-icon">

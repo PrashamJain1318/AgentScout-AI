@@ -11,7 +11,7 @@ import InterviewActions from "../components/career-planner/InterviewActions";
 import ResumeActions from "../components/career-planner/ResumeActions";
 import ApplicationActions from "../components/career-planner/ApplicationActions";
 import CareerMilestones from "../components/career-planner/CareerMilestones";
-import PlannerSkeleton from "../components/career-planner/PlannerSkeleton";
+import { getCachedData, setCachedData } from "../services/api";
 
 import {
   getTodayPlan,
@@ -20,26 +20,38 @@ import {
   updateAction
 } from "../services/careerPlanner.api";
 
+const CACHE_KEY = "career-planner-data";
+
 const CareerPlanner = () => {
-  const [plan, setPlan] = useState(null);
-  const [overview, setOverview] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const cached = getCachedData(CACHE_KEY);
+
+  const [plan, setPlan] = useState(cached?.data?.plan || null);
+  const [overview, setOverview] = useState(cached?.data?.overview || null);
+  const [loading, setLoading] = useState(!cached?.data);
   const [refreshing, setRefreshing] = useState(false);
   const [errorNotice, setErrorNotice] = useState(null);
 
   const fetchPlannerData = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+    else if (!cached?.data) setLoading(true);
     setErrorNotice(null);
 
     try {
-      const [planRes, overviewRes] = await Promise.all([
+      const results = await Promise.allSettled([
         isRefresh ? refreshPlan() : getTodayPlan(),
         getPlannerOverview()
       ]);
 
-      setPlan(planRes.data || null);
-      setOverview(overviewRes.data || null);
+      const planData = results[0].status === "fulfilled" ? results[0].value?.data : plan;
+      const overviewData = results[1].status === "fulfilled" ? results[1].value?.data : overview;
+
+      setPlan(planData || null);
+      setOverview(overviewData || null);
+
+      setCachedData(CACHE_KEY, {
+        plan: planData,
+        overview: overviewData
+      });
     } catch (err) {
       setErrorNotice("Failed to load career action plan.");
     } finally {
@@ -56,7 +68,6 @@ const CareerPlanner = () => {
     try {
       const res = await updateAction(actionId, newStatus);
       setPlan(res.data || null);
-      // Refresh overview stats
       getPlannerOverview().then(r => setOverview(r.data || null)).catch(() => {});
     } catch (err) {
       // Ignore fallback
@@ -65,6 +76,7 @@ const CareerPlanner = () => {
 
   return (
     <div className="resume-page-container">
+      {/* 1. Planner Shell Header Renders Immediately */}
       <PlannerHeader
         summary={plan?.aiSummary || ""}
         completionPercentage={plan?.completionPercentage || 0}
@@ -79,49 +91,52 @@ const CareerPlanner = () => {
         </div>
       )}
 
-      {loading ? (
-        <PlannerSkeleton />
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Progress KPI Row */}
-          <PlannerProgress overview={overview || {}} />
+      {/* 2. Main Layout Shell Renders Immediately */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {/* Progress KPI Row */}
+        <PlannerProgress overview={overview || {}} />
 
-          {/* Hero Next Best Action */}
-          <NextBestAction
-            nextBestAction={plan?.nextBestAction}
-            aiReasoning={plan?.aiReasoning}
-            onComplete={(id) => handleToggleActionState(id, "completed")}
-          />
+        {/* Hero Next Best Action */}
+        <NextBestAction
+          nextBestAction={plan?.nextBestAction}
+          aiReasoning={plan?.aiReasoning}
+          onComplete={(id) => handleToggleActionState(id, "completed")}
+        />
 
-          {/* 2-Column Main Workspace */}
-          <div className="details-2col-layout">
-            {/* Left Column: Today's Actions & Categorised Actions */}
-            <div className="details-main-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <TodayPlan
-                dailyActions={plan?.dailyActions || []}
-                onToggleAction={handleToggleActionState}
-              />
+        {/* 2-Column Main Workspace */}
+        <div className="details-2col-layout">
+          {/* Left Column */}
+          <div className="details-main-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            {loading && !plan ? (
+              <div className="skeleton-details-body" style={{ minHeight: "260px" }} />
+            ) : (
+              <>
+                <TodayPlan
+                  dailyActions={plan?.dailyActions || []}
+                  onToggleAction={handleToggleActionState}
+                />
 
-              <JobSearchActions actions={plan?.jobSearchActions || []} />
+                <JobSearchActions actions={plan?.jobSearchActions || []} />
 
-              <SkillActions actions={plan?.skillActions || []} />
+                <SkillActions actions={plan?.skillActions || []} />
 
-              <InterviewActions actions={plan?.interviewActions || []} />
+                <InterviewActions actions={plan?.interviewActions || []} />
 
-              <ResumeActions actions={plan?.resumeActions || []} />
+                <ResumeActions actions={plan?.resumeActions || []} />
 
-              <ApplicationActions actions={plan?.applicationActions || []} />
-            </div>
+                <ApplicationActions actions={plan?.applicationActions || []} />
+              </>
+            )}
+          </div>
 
-            {/* Right Column: Weekly Roadmap & Milestones */}
-            <div className="details-side-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <WeeklyPlan />
+          {/* Right Column */}
+          <div className="details-side-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <WeeklyPlan />
 
-              <CareerMilestones milestones={plan?.careerMilestones || []} />
-            </div>
+            <CareerMilestones milestones={plan?.careerMilestones || []} />
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

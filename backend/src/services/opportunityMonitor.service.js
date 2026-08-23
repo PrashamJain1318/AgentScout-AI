@@ -221,7 +221,12 @@ const runMonitorForUser = async (userId) => {
  */
 const getRecommendations = async (userId) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
-  await runMonitorForUser(userId).catch(() => {});
+  const monitor = await OpportunityMonitor.findOne({ user: userObjectId }).lean();
+  const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+  if (!monitor?.lastRunAt || new Date(monitor.lastRunAt) < fifteenMinsAgo) {
+    await runMonitorForUser(userId).catch(() => {});
+  }
 
   const observations = await OpportunityObservation.find({
     user: userObjectId,

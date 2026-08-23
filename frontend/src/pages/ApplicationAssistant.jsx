@@ -12,12 +12,14 @@ import ApplicationAnswers from "../components/application-assistant/ApplicationA
 import ApplicationStrategy from "../components/application-assistant/ApplicationStrategy";
 import ApplicationChecklist from "../components/application-assistant/ApplicationChecklist";
 import ApplicationAssetHistory from "../components/application-assistant/ApplicationAssetHistory";
-import ApplicationAssistantSkeleton from "../components/application-assistant/ApplicationAssistantSkeleton";
 import ApplicationAssistantEmptyState from "../components/application-assistant/ApplicationAssistantEmptyState";
 import ApplicationAssistantError from "../components/application-assistant/ApplicationAssistantError";
+import { getCachedData, setCachedData } from "../services/api";
 
 import { getOpportunities } from "../services/opportunities.api";
 import { analyzeOpportunityReadiness } from "../services/applicationAssistant.api";
+
+const CACHE_KEY = "application-assistant-opps";
 
 // URL Safety Helper
 const isValidExternalUrl = (urlStr) => {
@@ -41,31 +43,36 @@ const ApplicationAssistant = () => {
   const navigate = useNavigate();
   const targetOppId = searchParams.get("opportunity");
 
-  const [opportunities, setOpportunities] = useState([]);
+  const cached = getCachedData(CACHE_KEY);
+
+  const [opportunities, setOpportunities] = useState(cached?.data || []);
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
   const [assistantData, setAssistantData] = useState(null);
 
-  const [oppLoading, setOppLoading] = useState(true);
+  const [oppLoading, setOppLoading] = useState(!cached?.data);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [errorNotice, setErrorNotice] = useState(null);
 
   // 1. Fetch Candidate Available Opportunities
   useEffect(() => {
     const fetchOpps = async () => {
-      setOppLoading(true);
+      if (!cached?.data) setOppLoading(true);
       setErrorNotice(null);
 
       try {
         const res = await getOpportunities({ limit: 30 });
         const list = res.opportunities || res.data || [];
         setOpportunities(list);
+        setCachedData(CACHE_KEY, list);
 
-        if (targetOppId) {
+        if (targetOppId && Array.isArray(list)) {
           const preSelected = list.find((o) => (o._id || o.id) === targetOppId);
           if (preSelected) {
             setSelectedOpportunity(preSelected);
+          } else if (list.length > 0) {
+            setSelectedOpportunity(list[0]);
           }
-        } else if (list.length > 0) {
+        } else if (list.length > 0 && !selectedOpportunity) {
           setSelectedOpportunity(list[0]);
         }
       } catch (err) {
@@ -109,10 +116,10 @@ const ApplicationAssistant = () => {
 
   return (
     <div className="resume-page-container">
-      {/* Header Banner */}
+      {/* 1. Header Shell Renders Immediately */}
       <ApplicationAssistantHeader />
 
-      {/* Opportunity Selector */}
+      {/* 2. Opportunity Selector Renders Immediately */}
       <OpportunitySelector
         opportunities={opportunities}
         selectedOpportunity={selectedOpportunity}
@@ -129,8 +136,9 @@ const ApplicationAssistant = () => {
         />
       )}
 
+      {/* 3. Main Workspace Shell */}
       {oppLoading || analysisLoading ? (
-        <ApplicationAssistantSkeleton />
+        <div className="skeleton-details-body" style={{ minHeight: "360px", marginTop: "16px" }} />
       ) : !selectedOpportunity ? (
         <ApplicationAssistantEmptyState />
       ) : (
@@ -171,7 +179,7 @@ const ApplicationAssistant = () => {
             <ApplicationAssetHistory />
           </div>
 
-          {/* Side Column: Action Checklist, Strategy & External Apply */}
+          {/* Side Column */}
           <div className="details-side-column" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             {/* Quick External Apply Navigation */}
             <div className="quick-summary-card">
