@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
 
 /**
  * Central glowing AI Sphere/Orb representing AgentScout Intelligence Engine.
@@ -10,7 +9,6 @@ const CareerCoreCenter = ({ agentStatus = 'IDLE', readinessScore = 75 }) => {
   const coreRef = useRef();
   const shellRef = useRef();
 
-  // Emissive color matching Agent status
   const getColorByStatus = (status) => {
     switch (status) {
       case 'ANALYZING':
@@ -36,11 +34,11 @@ const CareerCoreCenter = ({ agentStatus = 'IDLE', readinessScore = 75 }) => {
 
     // Smooth breathing scale pulse (1.00 -> 1.04 -> 1.00 over 5 seconds)
     const scale = 1 + Math.sin((time * Math.PI) / 2.5) * 0.04;
-    
+
     if (coreRef.current) {
       coreRef.current.scale.set(scale, scale, scale);
     }
-    
+
     if (shellRef.current) {
       shellRef.current.rotation.y = time * 0.15;
       shellRef.current.rotation.x = time * 0.1;
@@ -64,16 +62,14 @@ const CareerCoreCenter = ({ agentStatus = 'IDLE', readinessScore = 75 }) => {
       {/* Transparent Outer Glass Shell */}
       <mesh ref={shellRef}>
         <sphereGeometry args={[0.92, 32, 32]} />
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           color="#ffffff"
           emissive={statusColor}
-          emissiveIntensity={0.2}
+          emissiveIntensity={0.3}
           transparent
           opacity={0.25}
           roughness={0.1}
-          transmission={0.8}
-          thickness={0.5}
-          wireframe={false}
+          metalness={0.9}
         />
       </mesh>
 

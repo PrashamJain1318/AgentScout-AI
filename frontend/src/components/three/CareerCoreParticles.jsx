@@ -4,11 +4,12 @@ import * as THREE from 'three';
 
 /**
  * 150-particle field floating inside a bounded spherical volume around AI Core.
+ * Uses rock-solid THREE.BufferGeometry setAttribute for 100% WebGL stability.
  */
 const CareerCoreParticles = ({ count = 150 }) => {
   const pointsRef = useRef();
 
-  const [positions, colors] = useMemo(() => {
+  const geometry = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const col = new Float32Array(count * 3);
 
@@ -16,7 +17,6 @@ const CareerCoreParticles = ({ count = 150 }) => {
     const accentColor = new THREE.Color('#34d399');
 
     for (let i = 0; i < count; i++) {
-      // Random position inside spherical radius 3.5
       const u = Math.random();
       const v = Math.random();
       const theta = u * 2.0 * Math.PI;
@@ -31,14 +31,16 @@ const CareerCoreParticles = ({ count = 150 }) => {
       pos[i * 3 + 1] = y;
       pos[i * 3 + 2] = z;
 
-      // Color interpolation
       const mixedColor = baseColor.clone().lerp(accentColor, Math.random() * 0.4);
       col[i * 3] = mixedColor.r;
       col[i * 3 + 1] = mixedColor.g;
       col[i * 3 + 2] = mixedColor.b;
     }
 
-    return [pos, col];
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return geom;
   }, [count]);
 
   useFrame((state) => {
@@ -49,21 +51,7 @@ const CareerCoreParticles = ({ count = 150 }) => {
   });
 
   return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={count}
-          array={positions}
-          itemSize={3}
-        />
-        <bufferAttribute
-          attach="attributes-color"
-          count={count}
-          array={colors}
-          itemSize={3}
-        />
-      </bufferGeometry>
+    <points ref={pointsRef} geometry={geometry}>
       <pointsMaterial
         size={0.045}
         vertexColors

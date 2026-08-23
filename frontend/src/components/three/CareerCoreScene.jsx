@@ -7,16 +7,15 @@ import CareerCoreConnections from './CareerCoreConnections';
 import CareerCoreNodes from './CareerCoreNodes';
 
 /**
- * Mouse Parallax Controller
+ * Mouse Parallax Controller with pointer safety checks
  */
 const ParallaxGroup = ({ children }) => {
   const groupRef = useRef();
 
   useFrame((state) => {
-    if (groupRef.current) {
-      // Mouse parallax tilt
-      const targetX = (state.pointer.x * Math.PI) / 16;
-      const targetY = (state.pointer.y * Math.PI) / 16;
+    if (groupRef.current && state.pointer) {
+      const targetX = ((state.pointer.x || 0) * Math.PI) / 16;
+      const targetY = ((state.pointer.y || 0) * Math.PI) / 16;
 
       groupRef.current.rotation.y += (targetX - groupRef.current.rotation.y) * 0.05;
       groupRef.current.rotation.x += (-targetY - groupRef.current.rotation.x) * 0.05;
@@ -44,13 +43,11 @@ const CareerCoreScene = ({
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       dpr={[1, 2]}
     >
-      {/* Lighting Setup */}
       <ambientLight intensity={0.6} />
       <pointLight position={[5, 5, 5]} intensity={1.5} color="#818cf8" />
       <pointLight position={[-5, -5, -2]} intensity={0.8} color="#38bdf8" />
       <directionalLight position={[0, 10, 0]} intensity={0.4} />
 
-      {/* Mouse Parallax Inner Scene */}
       <ParallaxGroup>
         <CareerCoreCenter agentStatus={agentStatus} readinessScore={readiness.overall || 75} />
         <CareerCoreOrbits />

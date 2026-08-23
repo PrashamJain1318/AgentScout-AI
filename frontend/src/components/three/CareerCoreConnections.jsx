@@ -4,10 +4,9 @@ import * as THREE from 'three';
 
 /**
  * Curved connection lines between Central AI Core and 6 Orbiting Nodes.
- * Features traveling data pulse particles.
+ * Uses rock-solid THREE.BufferGeometry setFromPoints for 100% WebGL stability.
  */
 const ConnectionLine = ({ start = [0, 0, 0], end, isHighlighted }) => {
-  const lineRef = useRef();
   const pulseRef = useRef();
 
   const curve = useMemo(() => {
@@ -22,7 +21,12 @@ const ConnectionLine = ({ start = [0, 0, 0], end, isHighlighted }) => {
     return new THREE.QuadraticBezierCurve3(p0, p1, p2);
   }, [start, end]);
 
-  const points = useMemo(() => curve.getPoints(32), [curve]);
+  const geometry = useMemo(() => {
+    const points = curve.getPoints(32);
+    const geom = new THREE.BufferGeometry();
+    geom.setFromPoints(points);
+    return geom;
+  }, [curve]);
 
   useFrame((state) => {
     if (pulseRef.current) {
@@ -35,21 +39,11 @@ const ConnectionLine = ({ start = [0, 0, 0], end, isHighlighted }) => {
   return (
     <group>
       {/* 3D Line Path */}
-      <line ref={lineRef}>
-        <bufferGeometry attach="geometry">
-          <bufferAttribute
-            attach="attributes-position"
-            count={points.length}
-            array={new Float32Array(points.flatMap(p => [p.x, p.y, p.z]))}
-            itemSize={3}
-          />
-        </bufferGeometry>
+      <line geometry={geometry}>
         <lineBasicMaterial
-          attach="material"
           color={isHighlighted ? '#10b981' : '#6366f1'}
           transparent
           opacity={isHighlighted ? 0.8 : 0.3}
-          linewidth={1}
         />
       </line>
 

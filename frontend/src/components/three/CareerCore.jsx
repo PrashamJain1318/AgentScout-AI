@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Zap, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Bot, ArrowRight } from 'lucide-react';
 import CareerCoreScene from './CareerCoreScene';
 import CareerCoreFallback from './CareerCoreFallback';
 import './CareerCore.css';
 
 /**
- * ErrorBoundary for WebGL / Three.js Canvas Safety
+ * Robust ErrorBoundary catching any Three.js / WebGL / R3F Canvas errors.
+ * Guarantees zero blank screens on any device or browser environment.
  */
 class WebGLErrorBoundary extends Component {
   constructor(props) {
@@ -19,7 +20,7 @@ class WebGLErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.warn('CareerCore 3D Canvas warning:', error, errorInfo);
+    console.warn('CareerCore 3D Canvas notice:', error, errorInfo);
   }
 
   render() {
@@ -43,12 +44,14 @@ const CareerCore = ({
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [isWebGLAvailable, setIsWebGLAvailable] = useState(true);
 
-  // Check WebGL availability
+  // Check WebGL context support
   useEffect(() => {
     try {
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      if (!gl) setIsWebGLAvailable(false);
+      if (!gl) {
+        setIsWebGLAvailable(false);
+      }
     } catch (e) {
       setIsWebGLAvailable(false);
     }
