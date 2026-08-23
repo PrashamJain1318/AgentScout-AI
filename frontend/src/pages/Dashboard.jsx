@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense, Component } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Sparkles,
@@ -36,7 +36,28 @@ import { getTodayPlan } from "../services/careerPlanner.api";
 import { getMonitor } from "../services/opportunityMonitor.api";
 import { getSnapshot as getOSSnapshot } from "../services/careerOS.api";
 
-import CareerCore from "../components/three/CareerCore";
+import CareerCoreFallback from "../components/three/CareerCoreFallback";
+
+const CareerCore = lazy(() => import("../components/three/CareerCore"));
+
+class ComponentErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err) {
+    console.warn("Component error caught by boundary:", err);
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
 
 // Time-based greeting helper
 const getGreeting = () => {
@@ -368,11 +389,15 @@ const Dashboard = () => {
 
         {/* Right Column: 3D AI CAREER CORE CANVAS */}
         <div>
-          <CareerCore
-            readiness={readinessObj}
-            agentStatus={osSnapshot?.agentState?.status || "AUTONOMOUS"}
-            nextAction={osSnapshot?.actionState?.nextBestAction}
-          />
+          <ComponentErrorBoundary fallback={<CareerCoreFallback readiness={overallScore} />}>
+            <Suspense fallback={<CareerCoreFallback readiness={overallScore} />}>
+              <CareerCore
+                readiness={readinessObj}
+                agentStatus={osSnapshot?.agentState?.status || "AUTONOMOUS"}
+                nextAction={osSnapshot?.actionState?.nextBestAction}
+              />
+            </Suspense>
+          </ComponentErrorBoundary>
         </div>
       </div>
 
