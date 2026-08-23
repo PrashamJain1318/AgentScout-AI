@@ -29,7 +29,7 @@ const UserSchema = new mongoose.Schema(
       required: function() {
         // Password is required only if no social account is attached
         const sa = this.socialAccounts || {};
-        const hasSocial = Boolean(sa.google?.id || sa.github?.id || sa.linkedin?.id);
+        const hasSocial = Boolean(sa.google?.id || sa.github?.id);
         return !hasSocial;
       },
       minlength: [8, 'Password must be at least 8 characters long'],
@@ -46,7 +46,7 @@ const UserSchema = new mongoose.Schema(
     },
     authProviders: {
       type: [String],
-      enum: ['email', 'google', 'github', 'linkedin'],
+      enum: ['email', 'google', 'github'],
       default: ['email']
     },
     socialAccounts: {
@@ -60,11 +60,6 @@ const UserSchema = new mongoose.Schema(
         username: { type: String },
         email: { type: String },
         avatar: { type: String }
-      },
-      linkedin: {
-        id: { type: String },
-        email: { type: String },
-        picture: { type: String }
       }
     },
     profile: {
@@ -110,7 +105,6 @@ const UserSchema = new mongoose.Schema(
 // Sparse unique indexes for social account provider IDs
 UserSchema.index({ 'socialAccounts.google.id': 1 }, { unique: true, sparse: true });
 UserSchema.index({ 'socialAccounts.github.id': 1 }, { unique: true, sparse: true });
-UserSchema.index({ 'socialAccounts.linkedin.id': 1 }, { unique: true, sparse: true });
 
 // Hash password prior to saving
 UserSchema.pre('save', async function (next) {

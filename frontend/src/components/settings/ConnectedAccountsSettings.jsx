@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link2, CheckCircle2, XCircle, AlertCircle, Loader2, Unlink } from "lucide-react";
+import { Link2, CheckCircle2, AlertCircle, Loader2, Unlink } from "lucide-react";
 import { getConnectedAccounts, disconnectProvider } from "../../services/auth.api";
 
 const ConnectedAccountsSettings = () => {
@@ -173,48 +173,6 @@ const ConnectedAccountsSettings = () => {
                 type="button"
                 className="action-btn primary-btn"
                 onClick={() => handleConnect("github")}
-                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", cursor: "pointer" }}
-              >
-                <Link2 size={14} />
-                <span>Connect</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* LINKEDIN PROVIDER CARD */}
-        <div className="provider-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", background: "var(--card-bg, #18181b)", border: "1px solid var(--border-color, #27272a)", borderRadius: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="20" height="20" fill="#0A66C2" viewBox="0 0 24 24">
-                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
-              </svg>
-            </div>
-            <div>
-              <h4 style={{ margin: 0, fontSize: "1rem", fontWeight: "600" }}>LinkedIn</h4>
-              <p style={{ margin: "2px 0 0", fontSize: "0.85rem", color: "var(--text-muted, #a1a1aa)" }}>
-                {providers.linkedin?.connected ? `Connected (${providers.linkedin.email || "LinkedIn Account"})` : "Not connected"}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            {providers.linkedin?.connected ? (
-              <button
-                type="button"
-                className="action-btn secondary-btn"
-                onClick={() => handleDisconnect("linkedin")}
-                disabled={actionLoading === "linkedin"}
-                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", borderRadius: "8px", cursor: "pointer" }}
-              >
-                {actionLoading === "linkedin" ? <Loader2 className="spin" size={14} /> : <Unlink size={14} />}
-                <span>Disconnect</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="action-btn primary-btn"
-                onClick={() => handleConnect("linkedin")}
                 style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", cursor: "pointer" }}
               >
                 <Link2 size={14} />

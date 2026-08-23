@@ -60,18 +60,18 @@ const getBackendBaseUrl = () => {
   if (clientUrl.includes('localhost') || clientUrl.includes('127.0.0.1')) {
     return `http://localhost:${process.env.PORT || 5001}`;
   }
-  return clientUrl; // In production monorepo layout, both share same host
+  return clientUrl;
 };
-
-// ==========================================
-// 1. GOOGLE OAUTH 2.0
-// ==========================================
 
 const isConfiguredKey = (key) => {
   if (!key) return false;
   const k = key.trim().toLowerCase();
   return k.length > 5 && !k.startsWith('your_') && !k.startsWith('your-') && !k.startsWith('<') && !k.includes('placeholder');
 };
+
+// ==========================================
+// 1. GOOGLE OAUTH 2.0
+// ==========================================
 
 const getGoogleAuthUrl = (state) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -103,7 +103,6 @@ const handleGoogleCallback = async (code) => {
     throw new Error('Google OAuth credentials (CLIENT_ID / CLIENT_SECRET) are missing.');
   }
 
-  // 1. Exchange code for access token
   const tokenPayload = new URLSearchParams({
     code,
     client_id: clientId,
@@ -123,7 +122,6 @@ const handleGoogleCallback = async (code) => {
 
   const accessToken = tokenRes.data.access_token;
 
-  // 2. Fetch Google User Profile
   const profileRes = await makeHttpRequest('https://www.googleapis.com/oauth2/v3/userinfo', {
     headers: { 'Authorization': `Bearer ${accessToken}` }
   });
@@ -174,7 +172,6 @@ const handleGitHubCallback = async (code) => {
     throw new Error('GitHub OAuth credentials (CLIENT_ID / CLIENT_SECRET) are missing.');
   }
 
-  // 1. Exchange code for access token
   const tokenPayload = new URLSearchParams({
     code,
     client_id: clientId,
@@ -196,7 +193,6 @@ const handleGitHubCallback = async (code) => {
 
   const accessToken = tokenRes.data.access_token;
 
-  // 2. Fetch GitHub User Profile
   const profileRes = await makeHttpRequest('https://api.github.com/user', {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -211,7 +207,6 @@ const handleGitHubCallback = async (code) => {
 
   let email = profile.email;
 
-  // 3. Fallback: Fetch user emails if primary email is private
   if (!email) {
     const emailsRes = await makeHttpRequest('https://api.github.com/user/emails', {
       headers: {
@@ -247,90 +242,16 @@ const handleGitHubCallback = async (code) => {
 };
 
 // ==========================================
-// 3. LINKEDIN OAUTH 2.0 (OpenID Connect)
-// ==========================================
-
-const getLinkedInAuthUrl = (state) => {
-  const clientId = process.env.LINKEDIN_CLIENT_ID;
-  const redirectUri = process.env.LINKEDIN_CALLBACK_URL || `${getBackendBaseUrl()}/api/auth/linkedin/callback`;
-
-  if (!isConfiguredKey(clientId)) {
-    throw new Error('LinkedIn OAuth credentials are not configured yet. Please configure LINKEDIN_CLIENT_ID in backend/.env');
-  }
-
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    state,
-    scope: 'openid profile email'
-  });
-
-  return `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
-};
-
-const handleLinkedInCallback = async (code) => {
-  const clientId = process.env.LINKEDIN_CLIENT_ID;
-  const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
-  const redirectUri = process.env.LINKEDIN_CALLBACK_URL || `${getBackendBaseUrl()}/api/auth/linkedin/callback`;
-
-  if (!clientId || !clientSecret) {
-    throw new Error('LinkedIn OAuth credentials (CLIENT_ID / CLIENT_SECRET) are missing.');
-  }
-
-  // 1. Exchange code for access token
-  const tokenPayload = new URLSearchParams({
-    grant_type: 'authorization_code',
-    code,
-    client_id: clientId,
-    client_secret: clientSecret,
-    redirect_uri: redirectUri
-  }).toString();
-
-  const tokenRes = await makeHttpRequest('https://www.linkedin.com/oauth/v2/accessToken', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  }, tokenPayload);
-
-  if (!tokenRes.data || !tokenRes.data.access_token) {
-    throw new Error(`LinkedIn token exchange failed: ${tokenRes.data?.error_description || tokenRes.raw || 'Invalid response'}`);
-  }
-
-  const accessToken = tokenRes.data.access_token;
-
-  // 2. Fetch LinkedIn OpenID UserInfo Profile
-  const profileRes = await makeHttpRequest('https://api.linkedin.com/v2/userinfo', {
-    headers: { 'Authorization': `Bearer ${accessToken}` }
-  });
-
-  const profile = profileRes.data || {};
-  if (!profile.sub || !profile.email) {
-    throw new Error('LinkedIn did not return a valid user identity or email address.');
-  }
-
-  return {
-    provider: 'linkedin',
-    id: profile.sub,
-    email: profile.email.toLowerCase(),
-    firstName: profile.given_name || 'LinkedIn',
-    lastName: profile.family_name || 'User',
-    picture: profile.picture || ''
-  };
-};
-
-// ==========================================
-// 4. SAFE USER FIND / CREATE / LINK ENGINE
+// 3. SAFE USER FIND / CREATE / LINK ENGINE
 // ==========================================
 
 const findOrCreateSocialUser = async (oauthData) => {
   const { provider, id, email, firstName, lastName, picture, avatar, username } = oauthData;
   const providerIdPath = `socialAccounts.${provider}.id`;
 
-  // 1. Search by Provider ID first
   let user = await User.findOne({ [providerIdPath]: id });
 
   if (user) {
-    // Ensure provider is listed in authProviders array
     if (!Array.isArray(user.authProviders)) user.authProviders = ['email'];
     if (!user.authProviders.includes(provider)) {
       user.authProviders.push(provider);
@@ -339,11 +260,9 @@ const findOrCreateSocialUser = async (oauthData) => {
     return user;
   }
 
-  // 2. Search by Verified Email (Safe Account Linking)
   user = await User.findOne({ email: email.toLowerCase() });
 
   if (user) {
-    // Link social provider to existing account
     if (!user.socialAccounts) user.socialAccounts = {};
     if (!user.socialAccounts[provider]) user.socialAccounts[provider] = {};
 
@@ -357,7 +276,6 @@ const findOrCreateSocialUser = async (oauthData) => {
       user.authProviders.push(provider);
     }
 
-    // Populate missing profile image or headline if empty
     if (!user.avatar && (picture || avatar)) user.avatar = picture || avatar;
     if (provider === 'github' && !user.profile.github) user.profile.github = `https://github.com/${username}`;
 
@@ -365,7 +283,6 @@ const findOrCreateSocialUser = async (oauthData) => {
     return user;
   }
 
-  // 3. Create New User Account via Social Authentication
   const newUser = new User({
     firstName,
     lastName,
@@ -404,7 +321,5 @@ module.exports = {
   handleGoogleCallback,
   getGitHubAuthUrl,
   handleGitHubCallback,
-  getLinkedInAuthUrl,
-  handleLinkedInCallback,
   findOrCreateSocialUser
 };

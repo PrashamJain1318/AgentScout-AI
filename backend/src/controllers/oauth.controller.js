@@ -7,8 +7,6 @@ const {
   handleGoogleCallback,
   getGitHubAuthUrl,
   handleGitHubCallback,
-  getLinkedInAuthUrl,
-  handleLinkedInCallback,
   findOrCreateSocialUser
 } = require('../services/oauth.service');
 
@@ -111,51 +109,7 @@ const githubCallback = async (req, res) => {
 };
 
 // ==========================================
-// 3. LINKEDIN OAUTH HANDLERS
-// ==========================================
-
-const initLinkedInAuth = (req, res) => {
-  try {
-    const state = generateOAuthState();
-    setStateCookie(res, state);
-    const authUrl = getLinkedInAuthUrl(state);
-    res.redirect(authUrl);
-  } catch (error) {
-    console.error('LinkedIn Auth Init Error:', error.message);
-    const clientUrl = getClientBaseUrl();
-    res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error.message || 'Unable to initiate LinkedIn authentication.')}`);
-  }
-};
-
-const linkedinCallback = async (req, res) => {
-  const clientUrl = getClientBaseUrl();
-  const { code, state, error: oauthError } = req.query;
-  const savedState = req.cookies?.oauth_state;
-
-  res.clearCookie('oauth_state');
-
-  if (oauthError) {
-    return res.redirect(`${clientUrl}/login?error=${encodeURIComponent('LinkedIn authentication was cancelled or denied.')}`);
-  }
-
-  if (!code || !state || state !== savedState) {
-    return res.redirect(`${clientUrl}/login?error=${encodeURIComponent('Invalid OAuth security state token. Please try again.')}`);
-  }
-
-  try {
-    const oauthData = await handleLinkedInCallback(code);
-    const user = await findOrCreateSocialUser(oauthData);
-
-    sendTokenCookie(user, 200, res, 'LinkedIn authentication successful');
-    res.redirect(`${clientUrl}/dashboard`);
-  } catch (error) {
-    console.error('LinkedIn Callback Error:', error.message);
-    res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error.message || 'LinkedIn login failed.')}`);
-  }
-};
-
-// ==========================================
-// 4. SETTINGS CONNECTED ACCOUNTS CONTROLLER
+// 3. SETTINGS CONNECTED ACCOUNTS CONTROLLER
 // ==========================================
 
 const getConnectedAccounts = async (req, res, next) => {
@@ -184,11 +138,6 @@ const getConnectedAccounts = async (req, res, next) => {
             username: sa.github?.username || null,
             email: sa.github?.email || null,
             avatar: sa.github?.avatar || null
-          },
-          linkedin: {
-            connected: Boolean(sa.linkedin?.id),
-            email: sa.linkedin?.email || null,
-            picture: sa.linkedin?.picture || null
           }
         }
       }
@@ -201,7 +150,7 @@ const getConnectedAccounts = async (req, res, next) => {
 const disconnectProvider = async (req, res, next) => {
   try {
     const { provider } = req.params;
-    const validProviders = ['google', 'github', 'linkedin'];
+    const validProviders = ['google', 'github'];
 
     if (!validProviders.includes(provider)) {
       return res.status(400).json({ success: false, message: 'Invalid social auth provider specified.' });
@@ -214,7 +163,7 @@ const disconnectProvider = async (req, res, next) => {
 
     const sa = user.socialAccounts || {};
     const hasPassword = Boolean(user.password);
-    const connectedSocialCount = ['google', 'github', 'linkedin'].filter(p => Boolean(sa[p]?.id)).length;
+    const connectedSocialCount = ['google', 'github'].filter(p => Boolean(sa[p]?.id)).length;
 
     // Safety Guard: Prevent disconnecting the only authentication method
     if (!hasPassword && connectedSocialCount <= 1) {
@@ -251,8 +200,6 @@ module.exports = {
   googleCallback,
   initGitHubAuth,
   githubCallback,
-  initLinkedInAuth,
-  linkedinCallback,
   getConnectedAccounts,
   disconnectProvider
 };

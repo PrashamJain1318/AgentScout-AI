@@ -10,8 +10,6 @@ const {
   googleCallback,
   initGitHubAuth,
   githubCallback,
-  initLinkedInAuth,
-  linkedinCallback,
   getConnectedAccounts,
   disconnectProvider
 } = require('../controllers/oauth.controller');
@@ -29,9 +27,6 @@ router.get('/google/callback', googleCallback);
 
 router.get('/github', initGitHubAuth);
 router.get('/github/callback', githubCallback);
-
-router.get('/linkedin', initLinkedInAuth);
-router.get('/linkedin/callback', linkedinCallback);
 
 // Authenticated auth & session routes
 router.post('/logout', protect, logout);

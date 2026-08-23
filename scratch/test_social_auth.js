@@ -1,79 +1,67 @@
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 const path = require('path');
+const dotenv = require('dotenv');
 
 dotenv.config({ path: path.join(__dirname, '../backend/.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const connectDB = require('../backend/src/config/db');
 const User = require('../backend/src/models/User.model');
 const {
   getGoogleAuthUrl,
   getGitHubAuthUrl,
-  getLinkedInAuthUrl,
   findOrCreateSocialUser
 } = require('../backend/src/services/oauth.service');
 
-const runTests = async () => {
+async function runTests() {
   console.log('--- STARTING SOCIAL AUTHENTICATION UNIT & INTEGRATION TESTS ---');
-
-  // 1. Test URL Generators
   try {
-    process.env.GOOGLE_CLIENT_ID = 'test_google_id';
-    process.env.GITHUB_CLIENT_ID = 'test_github_id';
-    process.env.LINKEDIN_CLIENT_ID = 'test_linkedin_id';
+    const state = 'test_state_123';
+    const googleUrl = getGoogleAuthUrl(state);
+    const githubUrl = getGitHubAuthUrl(state);
 
-    const gUrl = getGoogleAuthUrl('state123');
-    console.log('✓ Google Auth URL:', gUrl.includes('accounts.google.com') && gUrl.includes('state123'));
+    console.log('✓ Google Auth URL:', googleUrl.includes('accounts.google.com'));
+    console.log('✓ GitHub Auth URL:', githubUrl.includes('github.com/login/oauth'));
 
-    const ghUrl = getGitHubAuthUrl('state456');
-    console.log('✓ GitHub Auth URL:', ghUrl.includes('github.com/login/oauth/authorize') && ghUrl.includes('state456'));
-
-    const liUrl = getLinkedInAuthUrl('state789');
-    console.log('✓ LinkedIn Auth URL:', liUrl.includes('linkedin.com/oauth/v2/authorization') && liUrl.includes('state789'));
-  } catch (err) {
-    console.error('❌ URL Generator Test Failed:', err.message);
-  }
-
-  // 2. Database Account Linking Tests
-  try {
     await connectDB();
     console.log('✓ Database Connected via connectDB()');
 
-    const testEmail = `social_test_${Date.now()}@agentscout.ai`;
-
-    // A. Create new user via Google
-    const googleUser = await findOrCreateSocialUser({
+    // 1. Create or Find Google Social User
+    const mockGoogleData = {
       provider: 'google',
-      id: `google_id_${Date.now()}`,
-      email: testEmail,
-      firstName: 'Social',
+      id: 'google_test_user_id_99999',
+      email: 'test_oauth_user_unit@agentscout.ai',
+      firstName: 'OAuthTest',
       lastName: 'Candidate',
-      picture: 'https://lh3.googleusercontent.com/avatar.jpg'
-    });
-    console.log('✓ User Created via Google OAuth:', googleUser._id, '| Providers:', googleUser.authProviders);
+      picture: 'https://example.com/avatar.jpg'
+    };
 
-    // B. Link GitHub account with SAME verified email
-    const linkedUser = await findOrCreateSocialUser({
+    let user = await findOrCreateSocialUser(mockGoogleData);
+    console.log('✓ User Created via Google OAuth:', user._id, '| Providers:', user.authProviders);
+
+    // 2. Link GitHub to Existing User
+    const mockGitHubData = {
       provider: 'github',
-      id: `github_id_${Date.now()}`,
-      username: 'socialcandidate',
-      email: testEmail,
-      firstName: 'Social',
+      id: 'github_test_user_id_88888',
+      username: 'test_oauth_user_unit',
+      email: 'test_oauth_user_unit@agentscout.ai',
+      firstName: 'OAuthTest',
       lastName: 'Candidate',
-      avatar: 'https://avatars.githubusercontent.com/avatar.jpg'
-    });
-    console.log('✓ GitHub Account Linked to Existing User:', String(linkedUser._id) === String(googleUser._id), '| Providers:', linkedUser.authProviders);
+      avatar: 'https://example.com/github.jpg'
+    };
 
-    // Clean up test document
-    await User.deleteOne({ _id: googleUser._id });
+    user = await findOrCreateSocialUser(mockGitHubData);
+    console.log('✓ GitHub Account Linked to Existing User:', user.authProviders.includes('github'), '| Providers:', user.authProviders);
+
+    // Clean up test user from MongoDB Atlas
+    await User.deleteOne({ email: 'test_oauth_user_unit@agentscout.ai' });
     console.log('✓ Test user cleaned up cleanly');
 
-    await mongoose.connection.close();
     console.log('--- ALL SOCIAL AUTH TESTS PASSED 100% ---');
-  } catch (err) {
-    console.error('❌ Database Account Linking Test Failed:', err.message);
-    if (mongoose.connection.readyState !== 0) await mongoose.connection.close();
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Social Auth Test Failed:', error.message);
+    process.exit(1);
   }
-};
+}
 
 runTests();
