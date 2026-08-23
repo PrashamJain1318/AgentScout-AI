@@ -1,5 +1,5 @@
 const User = require('../models/User.model');
-const sendTokenCookie = require('../utils/sendTokenCookie');
+const { setTokenCookie } = require('../utils/sendTokenCookie');
 const {
   generateOAuthState,
   getClientBaseUrl,
@@ -56,11 +56,11 @@ const googleCallback = async (req, res) => {
     const oauthData = await handleGoogleCallback(code);
     const user = await findOrCreateSocialUser(oauthData);
 
-    sendTokenCookie(user, 200, res, 'Google authentication successful');
-    res.redirect(`${clientUrl}/dashboard`);
+    setTokenCookie(user, res);
+    return res.redirect(`${clientUrl}/dashboard`);
   } catch (error) {
     console.error('Google Callback Error:', error.message);
-    res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error.message || 'Google login failed.')}`);
+    return res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error.message || 'Google login failed.')}`);
   }
 };
 
@@ -100,11 +100,11 @@ const githubCallback = async (req, res) => {
     const oauthData = await handleGitHubCallback(code);
     const user = await findOrCreateSocialUser(oauthData);
 
-    sendTokenCookie(user, 200, res, 'GitHub authentication successful');
-    res.redirect(`${clientUrl}/dashboard`);
+    setTokenCookie(user, res);
+    return res.redirect(`${clientUrl}/dashboard`);
   } catch (error) {
     console.error('GitHub Callback Error:', error.message);
-    res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error.message || 'GitHub login failed.')}`);
+    return res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error.message || 'GitHub login failed.')}`);
   }
 };
 

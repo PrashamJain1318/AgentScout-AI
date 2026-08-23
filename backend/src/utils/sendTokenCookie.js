@@ -1,13 +1,10 @@
 const generateToken = require('./generateToken');
 
 /**
- * Issue JWT token and set HTTP-only cookie in HTTP response.
- * @param {Object} user - User document
- * @param {number} statusCode - HTTP status code
- * @param {Object} res - Express response object
- * @param {string} message - Response message
+ * Set HTTP-only JWT token cookie on Express response without sending JSON body.
+ * Used for OAuth redirects.
  */
-const sendTokenCookie = (user, statusCode, res, message) => {
+const setTokenCookie = (user, res) => {
   const token = generateToken(user._id, user.role);
   const days = parseInt(process.env.COOKIE_EXPIRES_DAYS || '7', 10);
 
@@ -15,14 +12,24 @@ const sendTokenCookie = (user, statusCode, res, message) => {
     expires: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+    sameSite: process.env.NODE_ENV === 'production' ? (process.env.CROSS_SITE === 'true' ? 'none' : 'lax') : 'lax'
   };
 
   res.cookie('token', token, cookieOptions);
+  return token;
+};
+
+/**
+ * Issue JWT token and set HTTP-only cookie in HTTP response with JSON payload.
+ * Used for Email/Password login and registration.
+ */
+const sendTokenCookie = (user, statusCode, res, message) => {
+  const token = setTokenCookie(user, res);
 
   res.status(statusCode).json({
     success: true,
     message,
+    token,
     user: {
       id: user._id,
       firstName: user.firstName,
@@ -34,3 +41,5 @@ const sendTokenCookie = (user, statusCode, res, message) => {
 };
 
 module.exports = sendTokenCookie;
+module.exports.sendTokenCookie = sendTokenCookie;
+module.exports.setTokenCookie = setTokenCookie;
