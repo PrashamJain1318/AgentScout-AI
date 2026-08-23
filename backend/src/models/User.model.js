@@ -26,7 +26,12 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Please provide a password'],
+      required: function() {
+        // Password is required only if no social account is attached
+        const sa = this.socialAccounts || {};
+        const hasSocial = Boolean(sa.google?.id || sa.github?.id || sa.linkedin?.id);
+        return !hasSocial;
+      },
       minlength: [8, 'Password must be at least 8 characters long'],
       select: false
     },
@@ -34,6 +39,33 @@ const UserSchema = new mongoose.Schema(
       type: String,
       enum: ['user', 'admin'],
       default: 'user'
+    },
+    avatar: {
+      type: String,
+      default: ''
+    },
+    authProviders: {
+      type: [String],
+      enum: ['email', 'google', 'github', 'linkedin'],
+      default: ['email']
+    },
+    socialAccounts: {
+      google: {
+        id: { type: String, default: null },
+        email: { type: String, default: null },
+        picture: { type: String, default: null }
+      },
+      github: {
+        id: { type: String, default: null },
+        username: { type: String, default: null },
+        email: { type: String, default: null },
+        avatar: { type: String, default: null }
+      },
+      linkedin: {
+        id: { type: String, default: null },
+        email: { type: String, default: null },
+        picture: { type: String, default: null }
+      }
     },
     profile: {
       headline: { type: String, default: '' },
@@ -75,9 +107,14 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
+// Sparse unique indexes for social account provider IDs
+UserSchema.index({ 'socialAccounts.google.id': 1 }, { unique: true, sparse: true });
+UserSchema.index({ 'socialAccounts.github.id': 1 }, { unique: true, sparse: true });
+UserSchema.index({ 'socialAccounts.linkedin.id': 1 }, { unique: true, sparse: true });
+
 // Hash password prior to saving
 UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+  if (!this.password || !this.isModified('password')) {
     return next();
   }
 
@@ -88,6 +125,7 @@ UserSchema.pre('save', async function (next) {
 
 // Instance method to compare password during authentication
 UserSchema.methods.matchPassword = async function (enteredPassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 

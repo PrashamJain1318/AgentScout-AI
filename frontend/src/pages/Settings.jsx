@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Settings as SettingsIcon, AlertCircle, RefreshCw } from "lucide-react";
 import SettingsNavigation from "../components/settings/SettingsNavigation";
 import AccountSettings from "../components/settings/AccountSettings";
+import ConnectedAccountsSettings from "../components/settings/ConnectedAccountsSettings";
 import JobPreferences from "../components/settings/JobPreferences";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import PrivacySettings from "../components/settings/PrivacySettings";
@@ -35,7 +36,6 @@ const Settings = () => {
   }, []);
 
   const handleSettingsUpdated = (updatedCategoryData) => {
-    // Optionally refresh settings data
     fetchCandidateSettings();
   };
 
@@ -50,7 +50,7 @@ const Settings = () => {
         </div>
         <h2>Settings & Account Management</h2>
         <p className="subtitle-text">
-          Manage candidate profile details, job preferences, alert notifications, privacy settings, and account security.
+          Manage candidate profile details, social account connections, job preferences, alert notifications, privacy settings, and account security.
         </p>
       </div>
 
@@ -88,6 +88,10 @@ const Settings = () => {
                   initialAccount={settingsData?.account}
                   onUpdated={handleSettingsUpdated}
                 />
+              )}
+
+              {activeSection === "connected" && (
+                <ConnectedAccountsSettings />
               )}
 
               {activeSection === "preferences" && (

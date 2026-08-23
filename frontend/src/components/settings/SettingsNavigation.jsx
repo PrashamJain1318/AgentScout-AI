@@ -6,10 +6,12 @@ import {
   KeyRound,
   Laptop,
   AlertTriangle,
+  Link2,
 } from "lucide-react";
 
 const SECTIONS = [
   { id: "account", label: "Account", icon: User },
+  { id: "connected", label: "Connected Accounts", icon: Link2 },
   { id: "preferences", label: "Job Preferences", icon: Sliders },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "privacy", label: "Privacy", icon: Shield },

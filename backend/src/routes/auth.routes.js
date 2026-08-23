@@ -5,17 +5,39 @@ const {
   logout,
   getMe
 } = require('../controllers/auth.controller');
+const {
+  initGoogleAuth,
+  googleCallback,
+  initGitHubAuth,
+  githubCallback,
+  initLinkedInAuth,
+  linkedinCallback,
+  getConnectedAccounts,
+  disconnectProvider
+} = require('../controllers/oauth.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
-// Public auth routes
+// Public email/password auth routes
 router.post('/register', register);
 router.post('/login', login);
 
-// Authenticated auth routes
+// OAuth 2.0 Social Login routes
+router.get('/google', initGoogleAuth);
+router.get('/google/callback', googleCallback);
+
+router.get('/github', initGitHubAuth);
+router.get('/github/callback', githubCallback);
+
+router.get('/linkedin', initLinkedInAuth);
+router.get('/linkedin/callback', linkedinCallback);
+
+// Authenticated auth & session routes
 router.post('/logout', protect, logout);
 router.get('/me', protect, getMe);
+router.get('/connected-accounts', protect, getConnectedAccounts);
+router.post('/disconnect/:provider', protect, disconnectProvider);
 
 // Admin-role authorization test route
 router.get('/admin-test', protect, authorize('admin'), (req, res) => {
