@@ -35,7 +35,7 @@ const initGoogleAuth = (req, res) => {
   } catch (error) {
     console.error('Google Auth Init Error:', error.message);
     const clientUrl = getClientBaseUrl();
-    res.redirect(`${clientUrl}/login?error=${encodeURIComponent('Unable to initiate Google authentication.')}`);
+    res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error.message || 'Unable to initiate Google authentication.')}`);
   }
 };
 
@@ -79,7 +79,7 @@ const initGitHubAuth = (req, res) => {
   } catch (error) {
     console.error('GitHub Auth Init Error:', error.message);
     const clientUrl = getClientBaseUrl();
-    res.redirect(`${clientUrl}/login?error=${encodeURIComponent('Unable to initiate GitHub authentication.')}`);
+    res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error.message || 'Unable to initiate GitHub authentication.')}`);
   }
 };
 
@@ -123,7 +123,7 @@ const initLinkedInAuth = (req, res) => {
   } catch (error) {
     console.error('LinkedIn Auth Init Error:', error.message);
     const clientUrl = getClientBaseUrl();
-    res.redirect(`${clientUrl}/login?error=${encodeURIComponent('Unable to initiate LinkedIn authentication.')}`);
+    res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error.message || 'Unable to initiate LinkedIn authentication.')}`);
   }
 };
 

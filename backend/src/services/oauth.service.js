@@ -67,12 +67,18 @@ const getBackendBaseUrl = () => {
 // 1. GOOGLE OAUTH 2.0
 // ==========================================
 
+const isConfiguredKey = (key) => {
+  if (!key) return false;
+  const k = key.trim().toLowerCase();
+  return k.length > 5 && !k.startsWith('your_') && !k.startsWith('your-') && !k.startsWith('<') && !k.includes('placeholder');
+};
+
 const getGoogleAuthUrl = (state) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.GOOGLE_CALLBACK_URL || `${getBackendBaseUrl()}/api/auth/google/callback`;
 
-  if (!clientId) {
-    throw new Error('GOOGLE_CLIENT_ID is not configured in backend environment variables.');
+  if (!isConfiguredKey(clientId)) {
+    throw new Error('Google OAuth credentials are not configured yet. Please configure GOOGLE_CLIENT_ID in backend/.env');
   }
 
   const params = new URLSearchParams({
@@ -145,8 +151,8 @@ const getGitHubAuthUrl = (state) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
   const redirectUri = process.env.GITHUB_CALLBACK_URL || `${getBackendBaseUrl()}/api/auth/github/callback`;
 
-  if (!clientId) {
-    throw new Error('GITHUB_CLIENT_ID is not configured in backend environment variables.');
+  if (!isConfiguredKey(clientId)) {
+    throw new Error('GitHub OAuth credentials are not configured yet. Please configure GITHUB_CLIENT_ID in backend/.env');
   }
 
   const params = new URLSearchParams({
@@ -248,8 +254,8 @@ const getLinkedInAuthUrl = (state) => {
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const redirectUri = process.env.LINKEDIN_CALLBACK_URL || `${getBackendBaseUrl()}/api/auth/linkedin/callback`;
 
-  if (!clientId) {
-    throw new Error('LINKEDIN_CLIENT_ID is not configured in backend environment variables.');
+  if (!isConfiguredKey(clientId)) {
+    throw new Error('LinkedIn OAuth credentials are not configured yet. Please configure LINKEDIN_CLIENT_ID in backend/.env');
   }
 
   const params = new URLSearchParams({
