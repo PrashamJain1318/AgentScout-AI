@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import AuthVerification from "./AuthVerification";
 
 const ProtectedRoute = () => {
   const { user, loading } = useAuth();
@@ -7,9 +8,12 @@ const ProtectedRoute = () => {
 
   if (loading) {
     return (
-      <div className="auth-loading">
-        Checking authentication...
-      </div>
+      <AuthVerification
+        state="CHECKING"
+        title="Verifying Session"
+        description="Securing your AgentScout-AI career workspace..."
+        fullScreen={true}
+      />
     );
   }
 

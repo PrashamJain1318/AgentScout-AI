@@ -12,7 +12,7 @@ import {
   Bot,
   ShieldCheck,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import AuthVerification from "../components/auth/AuthVerification";
 
 const Signup = () => {
   const { user, setUser, loading, register } = useAuth();
@@ -41,12 +41,7 @@ const Signup = () => {
   }, [location.search]);
 
   if (loading) {
-    return (
-      <div className="auth-loading-screen">
-        <Loader2 className="spin" size={32} />
-        <span>Checking session...</span>
-      </div>
-    );
+    return <AuthVerification state="CHECKING" fullScreen={true} />;
   }
 
   if (user) {
