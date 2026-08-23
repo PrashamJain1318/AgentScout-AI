@@ -51,20 +51,20 @@ const UserSchema = new mongoose.Schema(
     },
     socialAccounts: {
       google: {
-        id: { type: String, default: null },
-        email: { type: String, default: null },
-        picture: { type: String, default: null }
+        id: { type: String },
+        email: { type: String },
+        picture: { type: String }
       },
       github: {
-        id: { type: String, default: null },
-        username: { type: String, default: null },
-        email: { type: String, default: null },
-        avatar: { type: String, default: null }
+        id: { type: String },
+        username: { type: String },
+        email: { type: String },
+        avatar: { type: String }
       },
       linkedin: {
-        id: { type: String, default: null },
-        email: { type: String, default: null },
-        picture: { type: String, default: null }
+        id: { type: String },
+        email: { type: String },
+        picture: { type: String }
       }
     },
     profile: {

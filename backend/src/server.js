@@ -1,8 +1,22 @@
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+const path = require('path');
+const fs = require('fs');
 
-// Load environment variables
-dotenv.config();
+// Robust multi-path .env loader
+const envPaths = [
+  path.join(__dirname, '../.env'),
+  path.join(__dirname, '../../.env'),
+  path.join(process.cwd(), 'backend/.env'),
+  path.join(process.cwd(), '.env')
+];
+
+for (const p of envPaths) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p });
+  }
+}
+dotenv.config(); // fallback default
 
 const connectDB = require('./config/db');
 const app = require('./app');

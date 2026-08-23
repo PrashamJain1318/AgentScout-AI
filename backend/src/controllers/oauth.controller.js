@@ -225,8 +225,8 @@ const disconnectProvider = async (req, res, next) => {
     }
 
     // Unlink provider
-    if (user.socialAccounts && user.socialAccounts[provider]) {
-      user.socialAccounts[provider] = { id: null, email: null, username: null, picture: null, avatar: null };
+    if (user.socialAccounts) {
+      user.set(`socialAccounts.${provider}`, undefined);
     }
 
     user.authProviders = (user.authProviders || []).filter(p => p !== provider);

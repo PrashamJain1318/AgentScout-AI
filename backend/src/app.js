@@ -4,9 +4,23 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
+const path = require('path');
+const fs = require('fs');
 
-// Load environment variables
-dotenv.config();
+// Robust multi-path .env loader
+const envPaths = [
+  path.join(__dirname, '../.env'),
+  path.join(__dirname, '../../.env'),
+  path.join(process.cwd(), 'backend/.env'),
+  path.join(process.cwd(), '.env')
+];
+
+for (const p of envPaths) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p });
+  }
+}
+dotenv.config(); // fallback default
 
 const { apiLimiter } = require('./middleware/rateLimiter.middleware');
 const notFoundHandler = require('./middleware/notFound.middleware');
