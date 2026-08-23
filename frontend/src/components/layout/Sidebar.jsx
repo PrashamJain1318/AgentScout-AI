@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
+  Bot,
   Brain,
   Radio,
   Target,
@@ -24,6 +25,11 @@ const navigation = [
     label: "Dashboard",
     path: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    label: "AI Career Agent",
+    path: "/dashboard/agent",
+    icon: Bot,
   },
   {
     label: "Career OS",
@@ -107,6 +113,15 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
 
     if (navPath === "/dashboard") {
       return current === "/dashboard" || current === "/dashboard/";
+    }
+
+    if (navPath === "/dashboard/agent") {
+      return (
+        current === "/agent" ||
+        current === "/dashboard/agent" ||
+        current.startsWith("/agent/") ||
+        current.startsWith("/dashboard/agent/")
+      );
     }
 
     if (navPath === "/dashboard/career-os") {

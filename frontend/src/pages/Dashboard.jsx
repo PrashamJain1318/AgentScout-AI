@@ -407,8 +407,49 @@ const Dashboard = () => {
           <RecentApplications initialApplications={applications} />
         </div>
 
-        {/* Right Column: Career OS, Opportunity Monitor, Today's Plan & Widgets */}
+        {/* Right Column: Career Agent, Career OS, Opportunity Monitor, Today's Plan & Widgets */}
         <div className="dashboard-side-column">
+
+          {/* Compact AI Career Agent Widget (Phase 17.0) */}
+          <div className="dashboard-side-card" style={{ border: "2px solid #6366f1", background: "linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(79, 70, 229, 0.02) 100%)" }}>
+            <div className="section-header-flex">
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Sparkles size={18} style={{ color: "#818cf8" }} />
+                <h4 style={{ margin: 0, color: "#ffffff" }}>AI Career Agent</h4>
+              </div>
+              <button
+                type="button"
+                className="section-link-btn"
+                onClick={() => navigate("/dashboard/agent")}
+              >
+                <span>Agent Center →</span>
+              </button>
+            </div>
+
+            <div style={{ marginTop: "10px" }}>
+              <div className="flex-between" style={{ fontSize: "12px" }}>
+                <span>Career Readiness</span>
+                <strong style={{ color: "#818cf8", fontSize: "15px" }}>{osSnapshot?.careerScore || 75}%</strong>
+              </div>
+              <div className="progress-bar-bg" style={{ height: "6px", margin: "4px 0 8px 0" }}>
+                <div className="progress-bar-fill" style={{ width: `${osSnapshot?.careerScore || 75}%`, background: "#6366f1" }} />
+              </div>
+
+              <div style={{ margin: "6px 0 10px 0", fontSize: "12px" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: "#818cf8", textTransform: "uppercase" }}>NEXT BEST ACTION</span>
+                <p style={{ margin: "2px 0 0 0", color: "#e4e4e7", fontWeight: 600 }}>{osSnapshot?.actionState?.nextBestAction?.title || "Optimize Resume ATS Score"}</p>
+              </div>
+
+              <button
+                type="button"
+                className="save-profile-btn"
+                style={{ width: "100%", padding: "8px 12px", fontSize: "12px", justifyContent: "center", background: "#6366f1", border: "none" }}
+                onClick={() => navigate("/dashboard/agent")}
+              >
+                Run AI Career Agent
+              </button>
+            </div>
+          </div>
 
           {/* Compact Career OS Command Center Widget (Phase 17.0) */}
           <div className="dashboard-side-card" style={{ border: "2px solid var(--primary-light)" }}>

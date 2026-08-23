@@ -5,6 +5,8 @@ import NotificationBell from "../notifications/NotificationBell";
 
 const pageTitles = {
   "/dashboard": "Dashboard Overview",
+  "/dashboard/agent": "AI Career Agent",
+  "/agent": "AI Career Agent",
   "/dashboard/career-os": "Career Operating System",
   "/career-os": "Career Operating System",
   "/dashboard/profile": "Candidate Profile",

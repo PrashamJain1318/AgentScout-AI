@@ -30,6 +30,7 @@ import InterviewCoach from "./pages/InterviewCoach";
 import CareerPlanner from "./pages/CareerPlanner";
 import OpportunityMonitor from "./pages/OpportunityMonitor";
 import CareerOS from "./pages/CareerOS";
+import CareerAgent from "./pages/CareerAgent";
 
 function App() {
   return (
@@ -58,6 +59,16 @@ function App() {
               <Route
                 path="/dashboard"
                 element={<Dashboard />}
+              />
+
+              <Route
+                path="/dashboard/agent"
+                element={<CareerAgent />}
+              />
+
+              <Route
+                path="/agent"
+                element={<CareerAgent />}
               />
 
               <Route
