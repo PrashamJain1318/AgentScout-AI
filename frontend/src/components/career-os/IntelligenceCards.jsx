@@ -1,4 +1,4 @@
-import { useNavigate } from "react";
+import { useNavigate } from "react-router-dom";
 import { BookmarkCheck, Sparkles, Brain, FileText, ArrowRight, CheckCircle2, AlertCircle, Calendar, Trophy } from "lucide-react";
 
 export const ApplicationIntelligence = ({ state = {} }) => {

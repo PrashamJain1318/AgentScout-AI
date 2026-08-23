@@ -1,4 +1,4 @@
-import { useNavigate } from "react";
+import { useNavigate } from "react-router-dom";
 import { UserCheck, FileText, BookmarkCheck, Brain, Sparkles, FolderGit2, AlertTriangle, ArrowRight } from "lucide-react";
 
 export const ReadinessMatrix = ({ readiness = {} }) => {
