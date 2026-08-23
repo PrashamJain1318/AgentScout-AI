@@ -20,8 +20,8 @@ const CareerAgentSchema = new mongoose.Schema(
     },
     mode: {
       type: String,
-      enum: ['AUTONOMOUS_ADVISOR', 'SEMI_AUTONOMOUS', 'MANUAL'],
-      default: 'AUTONOMOUS_ADVISOR'
+      enum: ['MANUAL', 'ASSISTED', 'AUTONOMOUS', 'AUTONOMOUS_ADVISOR', 'SEMI_AUTONOMOUS'],
+      default: 'AUTONOMOUS'
     },
     lastRunAt: {
       type: Date,
@@ -89,7 +89,10 @@ const CareerAgentSchema = new mongoose.Schema(
       actionsExecuted: { type: Number, default: 0 },
       actionsApproved: { type: Number, default: 0 },
       actionsRejected: { type: Number, default: 0 },
-      actionsFailed: { type: Number, default: 0 }
+      actionsFailed: { type: Number, default: 0 },
+      actionsAutomated: { type: Number, default: 0 },
+      notificationsSent: { type: Number, default: 0 },
+      duplicatesPrevented: { type: Number, default: 0 }
     },
     lastContextSnapshot: {
       type: Object,

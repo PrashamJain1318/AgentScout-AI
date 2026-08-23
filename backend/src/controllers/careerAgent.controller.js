@@ -2,10 +2,16 @@ const CareerAgent = require('../models/CareerAgent.model');
 const CareerAgentAction = require('../models/CareerAgentAction.model');
 const CareerAgentMemory = require('../models/CareerAgentMemory.model');
 const CareerAgentActivity = require('../models/CareerAgentActivity.model');
+const CareerAgentTrigger = require('../models/CareerAgentTrigger.model');
+const CareerAgentExecution = require('../models/CareerAgentExecution.model');
+const CareerAgentNotification = require('../models/CareerAgentNotification.model');
+
 const { buildUnifiedContext } = require('../services/careerAgentContext.service');
 const { selectNextBestAction } = require('../services/careerAgentDecision.service');
 const { executeAction } = require('../services/careerAgentExecution.service');
 const { getActionDefinition } = require('../services/careerAgentActionRegistry.service');
+const { evaluateEventTrigger } = require('../services/careerAgentTrigger.service');
+const { runScheduledEvaluations } = require('../services/careerAgentScheduler.service');
 
 /**
  * Get or initialize Career Agent state for candidate.
@@ -19,7 +25,8 @@ const getAgentState = async (req, res, next) => {
       agent = await CareerAgent.create({
         user: userId,
         enabled: true,
-        status: 'IDLE'
+        status: 'IDLE',
+        mode: 'AUTONOMOUS'
       });
     }
 
@@ -136,43 +143,53 @@ const runAgent = async (req, res, next) => {
     };
     agent.statistics.decisionsMade = (agent.statistics.decisionsMade || 0) + 1;
     agent.statistics.recommendationsCreated = (agent.statistics.recommendationsCreated || 0) + 1;
-    agent.status = nextAction.requiresApproval ? 'ACTION_REQUIRED' : 'IDLE';
-    await agent.save();
 
-    // 5. Create or Update Pending Action Request if approval is needed
-    let actionRecord = null;
+    // Check risk and execution requirements
     const actionDef = getActionDefinition(nextAction.action);
-    const requiresApproval = nextAction.requiresApproval || actionDef?.requiresApproval || nextAction.riskLevel === 'EXTERNAL_ACTION' || nextAction.riskLevel === 'HIGH_IMPACT';
+    const isSafe = nextAction.riskLevel === 'SAFE' && actionDef?.riskLevel === 'SAFE';
+    const isExternal = nextAction.riskLevel === 'EXTERNAL_ACTION' || actionDef?.riskLevel === 'EXTERNAL_ACTION';
+    const shouldAutoExec = agent.mode === 'AUTONOMOUS' && isSafe && !isExternal;
 
-    if (requiresApproval) {
-      actionRecord = await CareerAgentAction.create({
-        user: userId,
-        agent: agent._id,
-        actionType: nextAction.action,
-        title: nextAction.title,
-        category: nextAction.category || 'career',
-        riskLevel: nextAction.riskLevel || 'SAFE',
-        status: 'PENDING',
-        reason: nextAction.reason,
-        evidence: nextAction.evidence,
-        confidence: nextAction.confidence,
-        impact: nextAction.impact,
-        urgency: nextAction.urgency,
-        deepLink: nextAction.deepLink,
-        requiresApproval: true
-      });
+    let actionRecord = await CareerAgentAction.create({
+      user: userId,
+      agent: agent._id,
+      actionType: nextAction.action,
+      title: nextAction.title,
+      category: nextAction.category || 'career',
+      riskLevel: nextAction.riskLevel || 'SAFE',
+      status: shouldAutoExec ? 'APPROVED' : 'PENDING',
+      reason: nextAction.reason,
+      evidence: nextAction.evidence,
+      confidence: nextAction.confidence,
+      impact: nextAction.impact,
+      urgency: nextAction.urgency,
+      deepLink: nextAction.deepLink,
+      requiresApproval: !shouldAutoExec
+    });
+
+    if (shouldAutoExec) {
+      try {
+        await executeAction(userId, actionRecord._id);
+        agent.statistics.actionsAutomated = (agent.statistics.actionsAutomated || 0) + 1;
+        agent.status = 'IDLE';
+      } catch (err) {
+        agent.status = 'ERROR';
+      }
+    } else {
+      agent.status = 'ACTION_REQUIRED';
     }
 
-    // 6. Log Activity Event
+    await agent.save();
+
     await CareerAgentActivity.create({
       user: userId,
       agent: agent._id,
-      eventType: 'DECISION_MADE',
+      eventType: shouldAutoExec ? 'ACTION_EXECUTED' : 'DECISION_MADE',
       actionType: nextAction.action,
       status: 'SUCCESS',
       summary: `Generated next best action: ${nextAction.title}`,
       reason: nextAction.reason,
-      metadata: { nextAction, actionRecordId: actionRecord?._id }
+      metadata: { nextAction, actionRecordId: actionRecord._id, autoExecuted: shouldAutoExec }
     });
 
     res.status(200).json({
@@ -181,7 +198,7 @@ const runAgent = async (req, res, next) => {
         agent,
         nextAction,
         actionRecord,
-        requiresApproval
+        requiresApproval: !shouldAutoExec
       }
     });
   } catch (error) {
@@ -432,6 +449,211 @@ const getStatistics = async (req, res, next) => {
   }
 };
 
+// ==========================================
+// PHASE 17.1 AUTOMATION & TRIGGER CONTROLLERS
+// ==========================================
+
+const getTriggers = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const triggers = await CareerAgentTrigger.find({ user: userId }).sort({ updatedAt: -1 }).lean();
+    res.status(200).json({ success: true, data: triggers });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createTrigger = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { type, name, description, frequency, conditions } = req.body;
+
+    const trigger = await CareerAgentTrigger.create({
+      user: userId,
+      type,
+      name: name || `Trigger: ${type}`,
+      description: description || '',
+      frequency: frequency || 'EVENT_DRIVEN',
+      conditions: conditions || {}
+    });
+
+    res.status(201).json({ success: true, data: trigger });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateTrigger = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { triggerId } = req.params;
+    const { enabled, frequency, conditions } = req.body;
+
+    const trigger = await CareerAgentTrigger.findOneAndUpdate(
+      { _id: triggerId, user: userId },
+      { $set: { enabled, frequency, conditions } },
+      { new: true }
+    );
+
+    if (!trigger) {
+      return res.status(404).json({ success: false, message: 'Trigger not found.' });
+    }
+
+    res.status(200).json({ success: true, data: trigger });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteTrigger = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { triggerId } = req.params;
+
+    const trigger = await CareerAgentTrigger.findOneAndDelete({ _id: triggerId, user: userId });
+    if (!trigger) {
+      return res.status(404).json({ success: false, message: 'Trigger not found.' });
+    }
+
+    res.status(200).json({ success: true, message: 'Trigger deleted successfully.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getNotifications = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const notifications = await CareerAgentNotification.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .lean();
+
+    res.status(200).json({ success: true, data: notifications });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getExecutions = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const executions = await CareerAgentExecution.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .lean();
+
+    res.status(200).json({ success: true, data: executions });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getPendingActions = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const pendingActions = await CareerAgentAction.find({ user: userId, status: 'PENDING' })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({ success: true, data: pendingActions });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const evaluateAgent = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { eventType, eventData } = req.body;
+
+    const result = await evaluateEventTrigger(userId, eventType || 'SCHEDULED_REVIEW', eventData || {});
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const runScheduler = async (req, res, next) => {
+  try {
+    const { frequency } = req.body;
+    const result = await runScheduledEvaluations(frequency || 'HOURLY');
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAutomationStatus = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    let agent = await CareerAgent.findOne({ user: userId });
+    if (!agent) {
+      agent = await CareerAgent.create({ user: userId });
+    }
+
+    const [triggerCount, pendingCount, executionCount, notificationCount] = await Promise.all([
+      CareerAgentTrigger.countDocuments({ user: userId, enabled: true }),
+      CareerAgentAction.countDocuments({ user: userId, status: 'PENDING' }),
+      CareerAgentExecution.countDocuments({ user: userId }),
+      CareerAgentNotification.countDocuments({ user: userId })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        enabled: agent.enabled,
+        status: agent.status,
+        mode: agent.mode || 'AUTONOMOUS',
+        triggerCount,
+        pendingCount,
+        executionCount,
+        notificationCount,
+        statistics: agent.statistics || {}
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateMode = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { mode } = req.body;
+
+    const validModes = ['MANUAL', 'ASSISTED', 'AUTONOMOUS'];
+    if (!validModes.includes(mode)) {
+      return res.status(400).json({ success: false, message: 'Invalid automation mode specified.' });
+    }
+
+    let agent = await CareerAgent.findOne({ user: userId });
+    if (!agent) {
+      agent = await CareerAgent.create({ user: userId });
+    }
+
+    agent.mode = mode;
+    await agent.save();
+
+    await CareerAgentActivity.create({
+      user: userId,
+      agent: agent._id,
+      eventType: 'MEMORY_UPDATED',
+      status: 'INFO',
+      summary: `Switched agent mode to ${mode}`,
+      reason: `Candidate updated automation mode.`
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Automation mode updated to ${mode}.`,
+      data: agent
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAgentState,
   getContext,
@@ -446,5 +668,16 @@ module.exports = {
   executeActionHandler,
   enableAgent,
   disableAgent,
-  getStatistics
+  getStatistics,
+  getTriggers,
+  createTrigger,
+  updateTrigger,
+  deleteTrigger,
+  getNotifications,
+  getExecutions,
+  getPendingActions,
+  evaluateAgent,
+  runScheduler,
+  getAutomationStatus,
+  updateMode
 };

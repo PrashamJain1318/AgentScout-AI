@@ -21,7 +21,11 @@ import {
   Trash2,
   Activity,
   History,
-  Lock
+  Lock,
+  Radio,
+  Bell,
+  Sliders,
+  Check
 } from 'lucide-react';
 import {
   getAgentState,
@@ -37,7 +41,12 @@ import {
   executeAction,
   enableAgent,
   disableAgent,
-  getAgentStatistics
+  getAgentStatistics,
+  getAutomationStatus,
+  updateMode,
+  evaluateAgent,
+  getNotifications,
+  getExecutions
 } from '../services/careerAgent.api';
 
 const CareerAgent = () => {
@@ -49,9 +58,13 @@ const CareerAgent = () => {
   const [activities, setActivities] = useState([]);
   const [memories, setMemories] = useState([]);
   const [stats, setStats] = useState({});
+  const [automationStatus, setAutomationStatus] = useState({});
+  const [agentNotifications, setAgentNotifications] = useState([]);
+  const [executions, setExecutions] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [evaluating, setEvaluating] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [errorNotice, setErrorNotice] = useState(null);
 
@@ -59,12 +72,15 @@ const CareerAgent = () => {
     setLoading(true);
     setErrorNotice(null);
     try {
-      const [stateRes, ctxRes, actRes, memRes, statRes] = await Promise.all([
+      const [stateRes, ctxRes, actRes, memRes, statRes, autoRes, notifRes, execRes] = await Promise.all([
         getAgentState(),
         getAgentContext(),
         getAgentActivity(),
         getAgentMemory(),
-        getAgentStatistics()
+        getAgentStatistics(),
+        getAutomationStatus(),
+        getNotifications(),
+        getExecutions()
       ]);
 
       if (stateRes?.data) setAgentState(stateRes.data);
@@ -72,6 +88,9 @@ const CareerAgent = () => {
       if (actRes?.data) setActivities(actRes.data || []);
       if (memRes?.data) setMemories(memRes.data || []);
       if (statRes?.data) setStats(statRes.data || {});
+      if (autoRes?.data) setAutomationStatus(autoRes.data || {});
+      if (notifRes?.data) setAgentNotifications(notifRes.data || []);
+      if (execRes?.data) setExecutions(execRes.data || []);
 
       // Fetch Next Best Action
       const nextRes = await getNextAction();
@@ -106,6 +125,29 @@ const CareerAgent = () => {
     }
   };
 
+  const handleEvaluateTriggers = async () => {
+    setEvaluating(true);
+    try {
+      await evaluateAgent('SCHEDULED_REVIEW');
+      fetchAgentDashboardData();
+    } catch (err) {
+      setErrorNotice('Failed to evaluate triggers.');
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
+  const handleModeChange = async (newMode) => {
+    try {
+      const res = await updateMode(newMode);
+      if (res?.data) {
+        setAgentState(res.data);
+      }
+    } catch (err) {
+      setErrorNotice('Failed to update automation mode.');
+    }
+  };
+
   const handleToggleAgent = async () => {
     if (!agentState) return;
     try {
@@ -126,7 +168,6 @@ const CareerAgent = () => {
     try {
       const res = await approveAction(actionId);
       if (res?.data) {
-        // Automatically execute approved action
         await executeAction(actionId);
         fetchAgentDashboardData();
       }
@@ -179,6 +220,7 @@ const CareerAgent = () => {
   };
 
   const pendingAction = activities.find(a => a.eventType === 'ACTION_REQUESTED' && a.metadata?.actionRecordId);
+  const currentMode = agentState?.mode || 'AUTONOMOUS';
 
   return (
     <div className="resume-page-container">
@@ -188,20 +230,19 @@ const CareerAgent = () => {
         <div>
           <div className="header-badge" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
             <Bot size={14} />
-            <span>AI CAREER AGENT ORCHESTRATOR • PHASE 17.0</span>
+            <span>AI CAREER AGENT AUTOMATION • PHASE 17.1</span>
           </div>
-          <h2 style={{ fontSize: '26px', margin: '8px 0 4px 0', color: '#ffffff' }}>AI Career Agent</h2>
+          <h2 style={{ fontSize: '26px', margin: '8px 0 4px 0', color: '#ffffff' }}>AI Career Agent Command Center</h2>
           <p className="subtitle-text" style={{ color: '#a1a1aa', margin: 0 }}>
-            Unified autonomous coordinator executing safe actions, managing risk, and optimizing hiring probability.
+            Proactive event-driven career agent executing safe actions, routing approvals, and optimizing hiring velocity.
           </p>
         </div>
 
         <div className="flex-between" style={{ gap: '12px' }}>
           <div style={{ textAlign: 'right', marginRight: '8px' }}>
-            <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#a1a1aa', fontWeight: 600, display: 'block' }}>Agent Status</span>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: agentState?.enabled ? '#10b981' : '#ef4444', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: agentState?.enabled ? '#10b981' : '#ef4444' }} />
-              {agentState?.enabled ? (agentState?.status || 'ONLINE') : 'PAUSED'}
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#a1a1aa', fontWeight: 600, display: 'block' }}>Automation Mode</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
+              <Zap size={13} /> {currentMode}
             </span>
           </div>
 
@@ -219,11 +260,22 @@ const CareerAgent = () => {
           <button
             type="button"
             className="secondary-action-btn"
+            onClick={handleEvaluateTriggers}
+            disabled={evaluating}
+            style={{ background: 'rgba(255,255,255,0.08)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.15)', padding: '10px 14px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            {evaluating ? <Loader2 className="spin" size={15} /> : <Radio size={15} />}
+            <span>Evaluate Triggers</span>
+          </button>
+
+          <button
+            type="button"
+            className="secondary-action-btn"
             onClick={handleToggleAgent}
             style={{ background: 'rgba(255,255,255,0.08)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.15)', padding: '10px 14px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             {agentState?.enabled ? <Pause size={15} /> : <Play size={15} />}
-            <span>{agentState?.enabled ? 'Pause Agent' : 'Enable Agent'}</span>
+            <span>{agentState?.enabled ? 'Pause' : 'Enable'}</span>
           </button>
         </div>
       </div>
@@ -243,7 +295,73 @@ const CareerAgent = () => {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '24px' }}>
           
-          {/* 2. CAREER READINESS METRICS GRID */}
+          {/* 2. AUTOMATION MODE SWITCHER & STATS */}
+          <div className="resume-section-card" style={{ background: 'var(--card-bg, #18181b)', border: '1px solid var(--border-color, #27272a)', borderRadius: '14px', padding: '20px' }}>
+            <div className="section-header-flex" style={{ marginBottom: '16px' }}>
+              <div>
+                <span className="eyebrow" style={{ color: '#818cf8', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>AUTONOMOUS EXECUTION CONTROL</span>
+                <h3 style={{ margin: '2px 0 0 0', fontSize: '18px' }}>Automation Mode & Performance</h3>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+              {/* Mode Selection Options */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#a1a1aa', textTransform: 'uppercase' }}>Select Automation Mode</span>
+                
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {['MANUAL', 'ASSISTED', 'AUTONOMOUS'].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => handleModeChange(m)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        border: currentMode === m ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)',
+                        background: currentMode === m ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.03)',
+                        color: currentMode === m ? '#818cf8' : '#a1a1aa',
+                        fontWeight: 700,
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      {currentMode === m && <Check size={14} />}
+                      {m}
+                    </button>
+                  ))}
+                </div>
+                <p style={{ fontSize: '12px', color: '#71717a', margin: 0 }}>
+                  {currentMode === 'MANUAL' && 'Manual Mode: Agent only acts when explicitly commanded.'}
+                  {currentMode === 'ASSISTED' && 'Assisted Mode: Agent creates recommendations and waits for candidate approval.'}
+                  {currentMode === 'AUTONOMOUS' && 'Autonomous Mode: Agent automatically executes SAFE internal actions. High impact & external actions require approval.'}
+                </p>
+              </div>
+
+              {/* Automation Performance Metrics */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div>
+                  <span style={{ fontSize: '11px', color: '#a1a1aa', display: 'block' }}>Actions Automated</span>
+                  <strong style={{ fontSize: '22px', color: '#10b981', display: 'block', marginTop: '2px' }}>{stats.actionsAutomated || 0}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: '11px', color: '#a1a1aa', display: 'block' }}>Notifications Sent</span>
+                  <strong style={{ fontSize: '22px', color: '#818cf8', display: 'block', marginTop: '2px' }}>{stats.notificationsSent || 0}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: '11px', color: '#a1a1aa', display: 'block' }}>Spam Prevented</span>
+                  <strong style={{ fontSize: '22px', color: '#f59e0b', display: 'block', marginTop: '2px' }}>{stats.duplicatesPrevented || 0}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. CAREER READINESS METRICS GRID */}
           <div className="resume-section-card" style={{ background: 'var(--card-bg, #18181b)', border: '1px solid var(--border-color, #27272a)', borderRadius: '14px', padding: '20px' }}>
             <div className="section-header-flex" style={{ marginBottom: '16px' }}>
               <div>
@@ -293,7 +411,7 @@ const CareerAgent = () => {
             </div>
           </div>
 
-          {/* 3. NEXT BEST ACTION (PRIMARY REASONING CARD) */}
+          {/* 4. NEXT BEST ACTION (PRIMARY REASONING CARD) */}
           <div className="resume-section-card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(79, 70, 229, 0.03) 100%)', border: '2px solid #6366f1', borderRadius: '14px', padding: '24px', position: 'relative' }}>
             <div style={{ position: 'absolute', top: '-12px', right: '20px', background: '#6366f1', color: '#ffffff', padding: '3px 12px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.5px' }}>
               🎯 SINGLE HIGHEST-IMPACT ACTION
@@ -344,7 +462,7 @@ const CareerAgent = () => {
             </div>
           </div>
 
-          {/* 4. PENDING APPROVALS & HUMAN APPROVAL FRAMEWORK */}
+          {/* 5. PENDING APPROVALS & HUMAN APPROVAL FRAMEWORK */}
           {pendingAction && (
             <div className="resume-section-card" style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '14px', padding: '20px' }}>
               <div className="section-header-flex">
@@ -387,7 +505,7 @@ const CareerAgent = () => {
             </div>
           )}
 
-          {/* 5. 2-COLUMN LAYOUT: ACTIVITY LOG & CANDIDATE MEMORY */}
+          {/* 6. 2-COLUMN LAYOUT: ACTIVITY LOG & CANDIDATE MEMORY */}
           <div className="details-2col-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
             
             {/* AGENT ACTIVITY & AUDIT TIMELINE */}

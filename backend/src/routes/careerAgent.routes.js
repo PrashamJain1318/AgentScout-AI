@@ -15,7 +15,18 @@ const {
   executeActionHandler,
   enableAgent,
   disableAgent,
-  getStatistics
+  getStatistics,
+  getTriggers,
+  createTrigger,
+  updateTrigger,
+  deleteTrigger,
+  getNotifications,
+  getExecutions,
+  getPendingActions,
+  evaluateAgent,
+  runScheduler,
+  getAutomationStatus,
+  updateMode
 } = require('../controllers/careerAgent.controller');
 
 const router = express.Router();
@@ -64,5 +75,26 @@ router.post('/disable', disableAgent);
 
 // GET /api/career-agent/statistics — Agent performance statistics
 router.get('/statistics', getStatistics);
+
+// ==========================================
+// PHASE 17.1 AUTOMATION & TRIGGER ROUTES
+// ==========================================
+
+// Triggers
+router.get('/triggers', getTriggers);
+router.post('/triggers', createTrigger);
+router.patch('/triggers/:triggerId', updateTrigger);
+router.delete('/triggers/:triggerId', deleteTrigger);
+
+// Notifications & Executions & Pending
+router.get('/notifications', getNotifications);
+router.get('/executions', getExecutions);
+router.get('/pending-actions', getPendingActions);
+
+// Evaluation & Scheduler & Status & Mode
+router.post('/evaluate', apiLimiter, evaluateAgent);
+router.post('/scheduler/run', apiLimiter, runScheduler);
+router.get('/automation-status', getAutomationStatus);
+router.patch('/mode', updateMode);
 
 module.exports = router;

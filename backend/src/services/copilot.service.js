@@ -9,6 +9,8 @@ const CareerActionPlan = require('../models/CareerActionPlan.model');
 const OpportunityMonitor = require('../models/OpportunityMonitor.model');
 const OpportunityObservation = require('../models/OpportunityObservation.model');
 const CareerOSSnapshot = require('../models/CareerOSSnapshot.model');
+const CareerAgent = require('../models/CareerAgent.model');
+const CareerAgentExecution = require('../models/CareerAgentExecution.model');
 
 const { isGeminiConfigured } = require('../config/gemini');
 const { makeGeminiHttpRequest } = require('./gemini.service');
@@ -28,7 +30,9 @@ const buildUserCareerContext = async (userId) => {
     actionPlan,
     monitor,
     observations,
-    osSnapshot
+    osSnapshot,
+    careerAgent,
+    recentExecutions
   ] = await Promise.all([
     User.findById(userId),
     Opportunity.find({ isActive: true }).sort({ postedAt: -1 }).limit(10),
@@ -40,7 +44,9 @@ const buildUserCareerContext = async (userId) => {
     CareerActionPlan.findOne({ user: userId }).sort({ createdAt: -1 }),
     OpportunityMonitor.findOne({ user: userId }),
     OpportunityObservation.find({ user: userId, dismissed: false }).populate('opportunity').limit(10),
-    CareerOSSnapshot.findOne({ user: userId }).sort({ generatedAt: -1 })
+    CareerOSSnapshot.findOne({ user: userId }).sort({ generatedAt: -1 }),
+    CareerAgent.findOne({ user: userId }),
+    CareerAgentExecution.find({ user: userId }).sort({ createdAt: -1 }).limit(5)
   ]);
 
   const profile = user ? (user.profile || {}) : {};
@@ -183,6 +189,18 @@ const buildUserCareerContext = async (userId) => {
         company: a.company || a.opportunity?.company,
         status: a.status
       }))
+    },
+    careerAgentAutomation: {
+      enabled: careerAgent ? careerAgent.enabled : true,
+      mode: careerAgent ? (careerAgent.mode || 'AUTONOMOUS') : 'AUTONOMOUS',
+      status: careerAgent ? careerAgent.status : 'IDLE',
+      statistics: careerAgent ? (careerAgent.statistics || {}) : {},
+      recentExecutions: Array.isArray(recentExecutions) ? recentExecutions.map(e => ({
+        actionType: e.actionType,
+        status: e.status,
+        durationMs: e.durationMs,
+        completedAt: e.completedAt
+      })) : []
     }
   };
 };
