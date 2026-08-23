@@ -5,6 +5,9 @@ const mongoose = require('mongoose');
  * Enforces strict connection verification before server startup.
  */
 const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) {
+    return mongoose.connection;
+  }
   const connStr = process.env.MONGODB_URI;
 
   if (!connStr) {
