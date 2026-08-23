@@ -11,6 +11,7 @@ import {
   Bot,
   ShieldCheck,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import AuthVerification from "../components/auth/AuthVerification";
 
 const Login = () => {

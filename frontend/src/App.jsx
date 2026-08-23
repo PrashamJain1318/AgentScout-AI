@@ -32,11 +32,14 @@ import OpportunityMonitor from "./pages/OpportunityMonitor";
 import CareerOS from "./pages/CareerOS";
 import CareerAgent from "./pages/CareerAgent";
 
+import GlobalErrorBoundary from "./components/common/GlobalErrorBoundary";
+
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
+    <GlobalErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
 
           {/* Public */}
           <Route
@@ -272,6 +275,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+  </GlobalErrorBoundary>
   );
 }
 
