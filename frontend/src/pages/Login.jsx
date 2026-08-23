@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Navigate, useLocation, useNavigate, Link } from "react-router-dom";
 import {
   Eye,
@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import AuthVerification from "../components/auth/AuthVerification";
+
+const Auth3DCanvas = lazy(() => import("../components/auth/Auth3DCanvas"));
 
 const Login = () => {
   const { user, login, loading } = useAuth();
@@ -87,7 +89,10 @@ const Login = () => {
       <div className="auth-container">
         
         {/* LEFT PANEL: Marketing & Features */}
-        <section className="auth-marketing-panel" aria-label="AgentScout AI Platform Features">
+        <section className="auth-marketing-panel" aria-label="AgentScout AI Platform Features" style={{ position: "relative" }}>
+          <Suspense fallback={null}>
+            <Auth3DCanvas />
+          </Suspense>
           <div className="marketing-header">
             <div className="brand-logo">
               <span className="brand-mark">A</span>
