@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense, Component } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Sparkles,
@@ -35,29 +35,6 @@ import { getInterviewReadiness } from "../services/interview.api";
 import { getTodayPlan } from "../services/careerPlanner.api";
 import { getMonitor } from "../services/opportunityMonitor.api";
 import { getSnapshot as getOSSnapshot } from "../services/careerOS.api";
-
-import CareerCoreFallback from "../components/three/CareerCoreFallback";
-
-const CareerCore = lazy(() => import("../components/three/CareerCore"));
-
-class ComponentErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch(err) {
-    console.warn("Component error caught by boundary:", err);
-  }
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback;
-    }
-    return this.props.children;
-  }
-}
 
 // Time-based greeting helper
 const getGreeting = () => {
@@ -262,142 +239,52 @@ const Dashboard = () => {
     ? Math.max(...recommendations.map(r => r.matchScore || r.score || 0))
     : 0;
 
+  const totalMatchesCount = recommendations.length;
+  const interviewsCount = analytics?.byStatus?.interview || 0;
+  const offersCount = analytics?.byStatus?.offer || 0;
+
   const resumeScores = resumeData?.scores || { ats: 0, completeness: 0, skillsCoverage: 0 };
   const readScore = interviewReadiness?.readinessScore || 75;
-  const overallScore = osSnapshot?.careerScore || 75;
-  const readinessObj = {
-    overall: overallScore,
-    resume: resumeScores.ats || osSnapshot?.readiness?.resume || 75,
-    skills: osSnapshot?.readiness?.skills || 70,
-    application: osSnapshot?.readiness?.application || 65,
-    interview: readScore || osSnapshot?.readiness?.interview || 75,
-    profile: profileCompletion.percentage || 80,
-    opportunities: topMatchScore || 85
-  };
 
   return (
     <div className="dashboard-page">
 
-      {/* 0. HERO: CAREER INTELLIGENCE COMMAND CENTER WITH 3D CAREER CORE */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 380px",
-          gap: "24px",
-          marginBottom: "24px",
-          alignItems: "stretch",
-        }}
-        className="command-center-hero"
-      >
-        {/* Left Column: Command Center Greeting & Readiness Overview */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, #18181b 0%, #09090b 100%)",
-            borderRadius: "18px",
-            border: "1px solid #27272a",
-            padding: "28px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <div
-              className="header-badge"
-              style={{
-                background: "rgba(99, 102, 241, 0.15)",
-                color: "#818cf8",
-                border: "1px solid rgba(99, 102, 241, 0.3)",
-                marginBottom: "12px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "4px 10px",
-                borderRadius: "20px",
-                fontSize: "11px",
-                fontWeight: 700,
-              }}
-            >
-              <Sparkles size={13} />
-              <span>CAREER INTELLIGENCE COMMAND CENTER</span>
-            </div>
-            <h2 style={{ fontSize: "28px", margin: "4px 0 8px 0", color: "#ffffff" }}>
-              {greeting}, {firstName} 👋
-            </h2>
-            <p style={{ color: "#a1a1aa", fontSize: "14px", margin: 0, lineHeight: 1.5 }}>
-              Your AI career operating system is continuously analyzing opportunities, resume compatibility, and application velocity.
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-              gap: "12px",
-              marginTop: "20px",
-            }}
-          >
-            <div
-              onClick={() => navigate("/dashboard/career-os")}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "12px",
-                padding: "12px 14px",
-                cursor: "pointer",
-              }}
-            >
-              <span style={{ fontSize: "11px", color: "#a1a1aa", display: "block" }}>Career Score</span>
-              <strong style={{ fontSize: "22px", color: "#818cf8", marginTop: "2px", display: "block" }}>
-                {overallScore}/100
-              </strong>
-            </div>
-
-            <div
-              onClick={() => navigate("/dashboard/resume")}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "12px",
-                padding: "12px 14px",
-                cursor: "pointer",
-              }}
-            >
-              <span style={{ fontSize: "11px", color: "#a1a1aa", display: "block" }}>Resume ATS</span>
-              <strong style={{ fontSize: "22px", color: "#10b981", marginTop: "2px", display: "block" }}>
-                {resumeScores.ats || 75}%
-              </strong>
-            </div>
-
-            <div
-              onClick={() => navigate("/dashboard/interview-coach")}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "12px",
-                padding: "12px 14px",
-                cursor: "pointer",
-              }}
-            >
-              <span style={{ fontSize: "11px", color: "#a1a1aa", display: "block" }}>Interview Readiness</span>
-              <strong style={{ fontSize: "22px", color: "#f59e0b", marginTop: "2px", display: "block" }}>
-                {readScore}%
-              </strong>
-            </div>
-          </div>
+      {/* 1. Welcome Header & Profile Completion */}
+      <div className="dashboard-welcome-container">
+        <div className="welcome-banner">
+          <span className="eyebrow">CAREER COMMAND CENTER</span>
+          <h2>
+            {greeting}, {firstName} 👋
+          </h2>
+          <p>
+            Here is your AI career intelligence, active applications, and personalized opportunities.
+          </p>
         </div>
 
-        {/* Right Column: 3D AI CAREER CORE CANVAS */}
-        <div>
-          <ComponentErrorBoundary fallback={<CareerCoreFallback readiness={overallScore} />}>
-            <Suspense fallback={<CareerCoreFallback readiness={overallScore} />}>
-              <CareerCore
-                readiness={readinessObj}
-                agentStatus={osSnapshot?.agentState?.status || "AUTONOMOUS"}
-                nextAction={osSnapshot?.actionState?.nextBestAction}
-              />
-            </Suspense>
-          </ComponentErrorBoundary>
+        <div className="profile-completion-card">
+          <div className="completion-header">
+            <div className="completion-title">
+              <UserCheck size={18} />
+              <span>Profile Completion</span>
+            </div>
+            <strong className="completion-percent">{profileCompletion.percentage}%</strong>
+          </div>
+
+          <div className="progress-bar-bg">
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${profileCompletion.percentage}%` }}
+            />
+          </div>
+
+          <button
+            type="button"
+            className="completion-action-btn"
+            onClick={() => navigate("/dashboard/profile")}
+          >
+            <span>{profileCompletion.percentage === 100 ? "View Profile" : "Complete Profile"}</span>
+            <ChevronRight size={15} />
+          </button>
         </div>
       </div>
 
