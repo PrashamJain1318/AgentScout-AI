@@ -259,11 +259,11 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         aria-label="Main Navigation"
       >
         <div className="brand">
-          <div className="brand-mark">A</div>
+          <img src="/logo.jpg" alt="AgentScout AI Logo" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain', background: '#ffffff', padding: '2px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
 
           <div>
-            <h1>AgentScout</h1>
-            <span>AI Career Platform</span>
+            <h1>AgentScout-AI</h1>
+            <span>YOUR AI CAREER PARTNER</span>
           </div>
 
           {onCloseMobile && (

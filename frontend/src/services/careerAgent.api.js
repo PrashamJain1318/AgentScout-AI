@@ -128,3 +128,83 @@ export const updateMode = async (mode) => {
   const response = await api.patch('/career-agent/mode', { mode }, { withCredentials: true });
   return response.data;
 };
+
+// ==========================================
+// PHASE 17.2 WORKFLOW & APPROVAL CENTER API
+// ==========================================
+
+export const createWorkflow = async (data = {}) => {
+  const response = await api.post('/career-agent/workflows', data, { withCredentials: true });
+  return response.data;
+};
+
+export const getWorkflows = async () => {
+  const response = await api.get('/career-agent/workflows', { withCredentials: true });
+  return response.data;
+};
+
+export const getWorkflowById = async (workflowId) => {
+  const response = await api.get(`/career-agent/workflows/${workflowId}`, { withCredentials: true });
+  return response.data;
+};
+
+export const startWorkflow = async (workflowId) => {
+  const response = await api.post(`/career-agent/workflows/${workflowId}/start`, {}, { withCredentials: true });
+  return response.data;
+};
+
+export const pauseWorkflow = async (workflowId) => {
+  const response = await api.post(`/career-agent/workflows/${workflowId}/pause`, {}, { withCredentials: true });
+  return response.data;
+};
+
+export const cancelWorkflow = async (workflowId) => {
+  const response = await api.post(`/career-agent/workflows/${workflowId}/cancel`, {}, { withCredentials: true });
+  return response.data;
+};
+
+export const approveWorkflow = async (workflowId) => {
+  const response = await api.post(`/career-agent/workflows/${workflowId}/approve`, {}, { withCredentials: true });
+  return response.data;
+};
+
+export const rejectWorkflow = async (workflowId, reason = '') => {
+  const response = await api.post(`/career-agent/workflows/${workflowId}/reject`, { reason }, { withCredentials: true });
+  return response.data;
+};
+
+export const getWorkflowPackage = async (workflowId) => {
+  const response = await api.get(`/career-agent/workflows/${workflowId}/package`, { withCredentials: true });
+  return response.data;
+};
+
+export const getApprovalCenter = async () => {
+  const response = await api.get('/career-agent/approval-center', { withCredentials: true });
+  return response.data;
+};
+
+export const getActionPreview = async (actionId) => {
+  const response = await api.get(`/career-agent/actions/${actionId}/preview`, { withCredentials: true });
+  return response.data;
+};
+
+export const editActionPackageContent = async (actionId, field, content) => {
+  const response = await api.post(`/career-agent/actions/${actionId}/edit`, { field, content }, { withCredentials: true });
+  return response.data;
+};
+
+export const approveActionPackage = async (actionId) => {
+  const response = await api.post(`/career-agent/actions/${actionId}/approve-package`, {}, { withCredentials: true });
+  return response.data;
+};
+
+export const recordOutcome = async (data = {}) => {
+  const response = await api.post('/career-agent/outcomes', data, { withCredentials: true });
+  return response.data;
+};
+
+export const getOutcomes = async () => {
+  const response = await api.get('/career-agent/outcomes', { withCredentials: true });
+  return response.data;
+};
+

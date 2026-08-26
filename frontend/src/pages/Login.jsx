@@ -95,9 +95,9 @@ const Login = () => {
             <Auth3DCanvas />
           </Suspense>
           <div className="marketing-header">
-            <div className="brand-logo">
-              <span className="brand-mark">A</span>
-              <span className="brand-name">AgentScout AI</span>
+            <div className="brand-logo" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <img src="/logo.jpg" alt="AgentScout AI Logo" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain', background: '#ffffff', padding: '2px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} />
+              <span className="brand-name">AGENTSCOUT-AI</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <ThemeToggle compact={true} />

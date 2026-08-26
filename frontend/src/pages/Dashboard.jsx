@@ -251,14 +251,17 @@ const Dashboard = () => {
 
       {/* 1. Welcome Header & Profile Completion */}
       <div className="dashboard-welcome-container">
-        <div className="welcome-banner">
-          <span className="eyebrow">CAREER COMMAND CENTER</span>
-          <h2>
-            {greeting}, {firstName} 👋
-          </h2>
-          <p>
-            Here is your AI career intelligence, active applications, and personalized opportunities.
-          </p>
+        <div className="welcome-banner" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <img src="/logo.jpg" alt="AgentScout AI Logo" style={{ width: '56px', height: '56px', borderRadius: '14px', objectFit: 'contain', background: '#ffffff', padding: '4px', boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }} />
+          <div>
+            <span className="eyebrow">CAREER COMMAND CENTER</span>
+            <h2 style={{ margin: '4px 0 8px 0' }}>
+              {greeting}, {firstName} 👋
+            </h2>
+            <p style={{ margin: 0 }}>
+              Let's secure your next career move with AgentScout AI.
+            </p>
+          </div>
         </div>
 
         <div className="profile-completion-card">

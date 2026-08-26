@@ -654,6 +654,178 @@ const updateMode = async (req, res, next) => {
   }
 };
 
+const workflowService = require('../services/careerAgentWorkflow.service');
+const actionPackageService = require('../services/careerAgentActionPackage.service');
+const approvalService = require('../services/careerAgentApproval.service');
+const outcomeService = require('../services/careerAgentOutcome.service');
+
+// ==========================================
+// PHASE 17.2 WORKFLOW & APPROVAL CONTROLLERS
+// ==========================================
+
+const createWorkflowHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const workflow = await workflowService.createWorkflow(userId, req.body || {});
+    res.status(201).json({ success: true, data: workflow });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getWorkflowsHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const workflows = await workflowService.getWorkflows(userId);
+    res.status(200).json({ success: true, data: workflows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getWorkflowByIdHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { workflowId } = req.params;
+    const workflow = await workflowService.getWorkflowById(userId, workflowId);
+    res.status(200).json({ success: true, data: workflow });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const startWorkflowHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { workflowId } = req.params;
+    const workflow = await workflowService.startWorkflow(userId, workflowId);
+    res.status(200).json({ success: true, data: workflow });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const pauseWorkflowHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { workflowId } = req.params;
+    const workflow = await workflowService.pauseWorkflow(userId, workflowId);
+    res.status(200).json({ success: true, data: workflow });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const cancelWorkflowHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { workflowId } = req.params;
+    const workflow = await workflowService.cancelWorkflow(userId, workflowId);
+    res.status(200).json({ success: true, data: workflow });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const approveWorkflowHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { workflowId } = req.params;
+    const result = await workflowService.approveWorkflow(userId, workflowId);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const rejectWorkflowHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { workflowId } = req.params;
+    const { reason } = req.body || {};
+    const workflow = await workflowService.rejectWorkflow(userId, workflowId, reason);
+    res.status(200).json({ success: true, data: workflow });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getWorkflowPackageHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { workflowId } = req.params;
+    const workflow = await workflowService.getWorkflowById(userId, workflowId);
+    const pkg = await actionPackageService.getActionPackage(userId, workflow.actionPackage?._id || workflow.actionPackage || workflowId);
+    res.status(200).json({ success: true, data: pkg });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getApprovalCenterHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const data = await approvalService.getApprovalCenterData(userId);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getActionPreviewHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { actionId } = req.params;
+    const preview = await approvalService.generateActionPreview(userId, actionId);
+    res.status(200).json({ success: true, data: preview });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const editActionPackageContentHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { actionId } = req.params;
+    const { field, content } = req.body || {};
+    const pkg = await actionPackageService.updatePackageContent(userId, actionId, field, content);
+    res.status(200).json({ success: true, data: pkg });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const approveActionPackageHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { actionId } = req.params;
+    const pkg = await actionPackageService.approvePackage(userId, actionId);
+    res.status(200).json({ success: true, data: pkg });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const recordOutcomeHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const outcome = await outcomeService.recordOutcome(userId, req.body || {});
+    res.status(201).json({ success: true, data: outcome });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getOutcomesHandler = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const outcomes = await outcomeService.getOutcomes(userId);
+    res.status(200).json({ success: true, data: outcomes });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAgentState,
   getContext,
@@ -679,5 +851,20 @@ module.exports = {
   evaluateAgent,
   runScheduler,
   getAutomationStatus,
-  updateMode
+  updateMode,
+  createWorkflowHandler,
+  getWorkflowsHandler,
+  getWorkflowByIdHandler,
+  startWorkflowHandler,
+  pauseWorkflowHandler,
+  cancelWorkflowHandler,
+  approveWorkflowHandler,
+  rejectWorkflowHandler,
+  getWorkflowPackageHandler,
+  getApprovalCenterHandler,
+  getActionPreviewHandler,
+  editActionPackageContentHandler,
+  approveActionPackageHandler,
+  recordOutcomeHandler,
+  getOutcomesHandler
 };

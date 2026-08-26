@@ -11,6 +11,9 @@ const OpportunityObservation = require('../models/OpportunityObservation.model')
 const CareerOSSnapshot = require('../models/CareerOSSnapshot.model');
 const CareerAgent = require('../models/CareerAgent.model');
 const CareerAgentExecution = require('../models/CareerAgentExecution.model');
+const CareerAgentWorkflow = require('../models/CareerAgentWorkflow.model');
+const CareerAgentActionPackage = require('../models/CareerAgentActionPackage.model');
+const CareerAgentMemory = require('../models/CareerAgentMemory.model');
 
 const { isGeminiConfigured } = require('../config/gemini');
 const { makeGeminiHttpRequest } = require('./gemini.service');
@@ -32,7 +35,10 @@ const buildUserCareerContext = async (userId) => {
     observations,
     osSnapshot,
     careerAgent,
-    recentExecutions
+    recentExecutions,
+    activeWorkflows,
+    pendingPackages,
+    agentMemories
   ] = await Promise.all([
     User.findById(userId),
     Opportunity.find({ isActive: true }).sort({ postedAt: -1 }).limit(10),
@@ -46,7 +52,10 @@ const buildUserCareerContext = async (userId) => {
     OpportunityObservation.find({ user: userId, dismissed: false }).populate('opportunity').limit(10),
     CareerOSSnapshot.findOne({ user: userId }).sort({ generatedAt: -1 }),
     CareerAgent.findOne({ user: userId }),
-    CareerAgentExecution.find({ user: userId }).sort({ createdAt: -1 }).limit(5)
+    CareerAgentExecution.find({ user: userId }).sort({ createdAt: -1 }).limit(5),
+    CareerAgentWorkflow.find({ user: userId, status: { $ne: 'COMPLETED' } }).limit(5),
+    CareerAgentActionPackage.find({ user: userId, approvalState: { $in: ['PENDING', 'EDITED'] } }).limit(5),
+    CareerAgentMemory.find({ user: userId }).limit(10)
   ]);
 
   const profile = user ? (user.profile || {}) : {};
@@ -200,7 +209,12 @@ const buildUserCareerContext = async (userId) => {
         status: e.status,
         durationMs: e.durationMs,
         completedAt: e.completedAt
-      })) : []
+      })) : [],
+      activeWorkflowsCount: (activeWorkflows || []).length,
+      pendingPackagesCount: (pendingPackages || []).length,
+      activeWorkflows: (activeWorkflows || []).map(w => ({ id: w._id, title: w.title, type: w.type, status: w.status, progress: w.progress })),
+      pendingPackages: (pendingPackages || []).map(p => ({ id: p._id, title: p.title, type: p.type, state: p.approvalState })),
+      agentMemories: (agentMemories || []).map(m => ({ key: m.key, value: m.value, category: m.category }))
     }
   };
 };

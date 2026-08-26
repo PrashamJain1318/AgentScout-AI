@@ -26,7 +26,22 @@ const {
   evaluateAgent,
   runScheduler,
   getAutomationStatus,
-  updateMode
+  updateMode,
+  createWorkflowHandler,
+  getWorkflowsHandler,
+  getWorkflowByIdHandler,
+  startWorkflowHandler,
+  pauseWorkflowHandler,
+  cancelWorkflowHandler,
+  approveWorkflowHandler,
+  rejectWorkflowHandler,
+  getWorkflowPackageHandler,
+  getApprovalCenterHandler,
+  getActionPreviewHandler,
+  editActionPackageContentHandler,
+  approveActionPackageHandler,
+  recordOutcomeHandler,
+  getOutcomesHandler
 } = require('../controllers/careerAgent.controller');
 
 const router = express.Router();
@@ -96,5 +111,30 @@ router.post('/evaluate', apiLimiter, evaluateAgent);
 router.post('/scheduler/run', apiLimiter, runScheduler);
 router.get('/automation-status', getAutomationStatus);
 router.patch('/mode', updateMode);
+
+// ==========================================
+// PHASE 17.2 WORKFLOW & APPROVAL CENTER ROUTES
+// ==========================================
+
+// Workflows
+router.post('/workflows', apiLimiter, createWorkflowHandler);
+router.get('/workflows', getWorkflowsHandler);
+router.get('/workflows/:workflowId', getWorkflowByIdHandler);
+router.post('/workflows/:workflowId/start', startWorkflowHandler);
+router.post('/workflows/:workflowId/pause', pauseWorkflowHandler);
+router.post('/workflows/:workflowId/cancel', cancelWorkflowHandler);
+router.post('/workflows/:workflowId/approve', approveWorkflowHandler);
+router.post('/workflows/:workflowId/reject', rejectWorkflowHandler);
+router.get('/workflows/:workflowId/package', getWorkflowPackageHandler);
+
+// Approval Center & Action Previews
+router.get('/approval-center', getApprovalCenterHandler);
+router.get('/actions/:actionId/preview', getActionPreviewHandler);
+router.post('/actions/:actionId/edit', editActionPackageContentHandler);
+router.post('/actions/:actionId/approve-package', approveActionPackageHandler);
+
+// Outcomes
+router.post('/outcomes', recordOutcomeHandler);
+router.get('/outcomes', getOutcomesHandler);
 
 module.exports = router;

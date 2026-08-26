@@ -57,8 +57,8 @@ const AuthVerification = ({
         
         {/* BRAND LOGO HEADER */}
         <div className="auth-verification-header">
-          <div className="auth-brand-mark">A</div>
-          <span className="auth-brand-title">AgentScout AI</span>
+          <img src="/logo.jpg" alt="AgentScout AI Logo" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain', background: '#ffffff', padding: '2px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} />
+          <span className="auth-brand-title">AGENTSCOUT-AI</span>
         </div>
 
         {/* AI STATUS ORBIT STAGE */}
@@ -68,7 +68,11 @@ const AuthVerification = ({
           <div className="ai-orbit-particle" />
           
           <div className="ai-orbit-core">
-            {config.icon}
+            {state === 'CHECKING' ? (
+              <img src="/logo.jpg" alt="Verifying Session Logo" style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'contain', background: '#ffffff', padding: '3px', boxShadow: '0 0 20px rgba(99, 102, 241, 0.5)' }} />
+            ) : (
+              config.icon
+            )}
           </div>
         </div>
 
