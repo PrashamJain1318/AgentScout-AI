@@ -13,6 +13,7 @@ import TopOpportunities from "../components/dashboard/TopOpportunities";
 import TodayCareerPlan from "../components/dashboard/TodayCareerPlan";
 import CareerAgentWidget from "../components/dashboard/CareerAgentWidget";
 import SmartActivityFeed from "../components/dashboard/SmartActivityFeed";
+import CareerIntelligenceWidget from "../components/dashboard/CareerIntelligenceWidget";
 
 import { getRecommendedOpportunities } from "../services/opportunities.api";
 import { getApplications } from "../services/applications.api";
@@ -198,6 +199,9 @@ const Dashboard = () => {
           interviewReadiness={interviewReadiness}
           onNavigate={navigate}
         />
+
+        {/* 5.5 CAREER INTELLIGENCE PROACTIVE WIDGET */}
+        <CareerIntelligenceWidget onNavigate={navigate} />
 
         {/* 6. TOP 3 OPPORTUNITIES */}
         <TopOpportunities

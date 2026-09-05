@@ -1,15 +1,17 @@
 import api from "./api";
 
 /**
- * Fetch complete Predictive Career Intelligence Overview
+ * Fetch complete Career Intelligence Overview (Health, Highlights, Feed, Events)
  */
-export const getIntelligenceOverview = async () => {
-  const response = await api.get("/career-intelligence", { withCredentials: true });
+export const getOverview = async () => {
+  const response = await api.get("/career-intelligence/overview", { withCredentials: true });
   return response.data;
 };
 
+export const getIntelligenceOverview = getOverview;
+
 /**
- * Fetch 7-Dimension Career Health Score
+ * Fetch 7-Category Career Health Score & Breakdown
  */
 export const getCareerHealth = async () => {
   const response = await api.get("/career-intelligence/health", { withCredentials: true });
@@ -17,49 +19,49 @@ export const getCareerHealth = async () => {
 };
 
 /**
- * Fetch Skill Gap Intelligence
+ * Fetch ranked AI Intelligence Feed items
  */
-export const getSkillIntelligence = async () => {
-  const response = await api.get("/career-intelligence/skills", { withCredentials: true });
+export const getIntelligenceFeed = async (params = {}) => {
+  const response = await api.get("/career-intelligence/feed", {
+    params,
+    withCredentials: true
+  });
   return response.data;
 };
 
 /**
- * Fetch Career Bottlenecks
+ * Fetch candidate timeline events
  */
-export const getCareerBottlenecks = async () => {
-  const response = await api.get("/career-intelligence/bottlenecks", { withCredentials: true });
+export const getCareerEvents = async (params = {}) => {
+  const response = await api.get("/career-intelligence/events", {
+    params,
+    withCredentials: true
+  });
   return response.data;
 };
 
 /**
- * Fetch Trajectory Forecasts
+ * Mark a timeline event as read
  */
-export const getCareerForecasts = async () => {
-  const response = await api.get("/career-intelligence/forecast", { withCredentials: true });
+export const markEventRead = async (eventId) => {
+  const response = await api.patch(`/career-intelligence/events/${eventId}/read`, {}, { withCredentials: true });
   return response.data;
 };
 
 /**
- * Fetch Actionable AI Insights
+ * Archive a timeline event
  */
-export const getCareerInsights = async () => {
-  const response = await api.get("/career-intelligence/insights", { withCredentials: true });
+export const archiveEvent = async (eventId) => {
+  const response = await api.patch(`/career-intelligence/events/${eventId}/archive`, {}, { withCredentials: true });
   return response.data;
 };
 
 /**
- * Fetch Highest ROI Actions
+ * Force manual recalculation of Career Intelligence
  */
-export const getActionROI = async () => {
-  const response = await api.get("/career-intelligence/actions", { withCredentials: true });
+export const refreshIntelligence = async () => {
+  const response = await api.post("/career-intelligence/refresh", {}, { withCredentials: true });
   return response.data;
 };
 
-/**
- * Force recalculation of Predictive Intelligence Engine
- */
-export const runIntelligenceAnalysis = async () => {
-  const response = await api.post("/career-intelligence/analyze", {}, { withCredentials: true });
-  return response.data;
-};
+export const runIntelligenceAnalysis = refreshIntelligence;

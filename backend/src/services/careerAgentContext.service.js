@@ -10,6 +10,8 @@ const OpportunityMonitor = require('../models/OpportunityMonitor.model');
 const Notification = require('../models/Notification.model');
 const CareerOSSnapshot = require('../models/CareerOSSnapshot.model');
 const ApplicationAgent = require('../models/ApplicationAgent.model');
+const CareerHealth = require('../models/CareerHealth.model');
+const CareerEvent = require('../models/CareerEvent.model');
 
 /**
  * Unified Career Context Service
@@ -32,7 +34,9 @@ const buildUnifiedContext = async (userId) => {
     appAssistantRecords,
     latestNotifications,
     latestOSSnapshot,
-    applicationAgent
+    applicationAgent,
+    latestCareerHealth,
+    recentCareerEvents
   ] = await Promise.all([
     User.findById(userId).lean(),
     Resume.findOne({ user: userId }).lean(),
@@ -44,7 +48,9 @@ const buildUnifiedContext = async (userId) => {
     ApplicationAssistant.find({ user: userId }).lean(),
     Notification.find({ user: userId }).sort({ createdAt: -1 }).limit(10).lean(),
     CareerOSSnapshot.findOne({ user: userId }).sort({ generatedAt: -1 }).lean(),
-    ApplicationAgent.findOne({ user: userId }).populate('currentOpportunity').lean()
+    ApplicationAgent.findOne({ user: userId }).populate('currentOpportunity').lean(),
+    CareerHealth.findOne({ user: userId }).sort({ createdAt: -1 }).lean(),
+    CareerEvent.find({ user: userId, isArchived: false }).sort({ occurredAt: -1 }).limit(5).lean()
   ]);
 
   if (!user) {
@@ -243,7 +249,27 @@ const buildUnifiedContext = async (userId) => {
       readiness: 75,
       currentOpportunity: null,
       nextAction: 'Select a target opportunity to start Application Agent'
-    }
+    },
+    careerHealth: latestCareerHealth ? {
+      overallScore: latestCareerHealth.overallScore,
+      previousScore: latestCareerHealth.previousScore,
+      change: latestCareerHealth.change,
+      trend: latestCareerHealth.trend,
+      breakdown: latestCareerHealth.breakdown
+    } : {
+      overallScore: 70,
+      previousScore: 70,
+      change: 0,
+      trend: 'STABLE'
+    },
+    recentCareerEvents: recentCareerEvents.map(e => ({
+      id: e._id,
+      eventType: e.eventType,
+      title: e.title,
+      description: e.description,
+      priority: e.priority,
+      occurredAt: e.occurredAt
+    }))
   };
 };
 

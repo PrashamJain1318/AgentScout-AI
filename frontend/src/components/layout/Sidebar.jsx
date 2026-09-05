@@ -140,12 +140,16 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
       return current === "/dashboard" || current === "/dashboard/";
     }
 
-    if (navPath === "/dashboard/career-intelligence") {
+    if (navPath === "/dashboard/career-intelligence" || navPath === "/dashboard/intelligence") {
       return (
         current === "/career-intelligence" ||
         current === "/dashboard/career-intelligence" ||
+        current === "/intelligence" ||
+        current === "/dashboard/intelligence" ||
         current.startsWith("/career-intelligence/") ||
-        current.startsWith("/dashboard/career-intelligence/")
+        current.startsWith("/dashboard/career-intelligence/") ||
+        current.startsWith("/intelligence/") ||
+        current.startsWith("/dashboard/intelligence/")
       );
     }
 

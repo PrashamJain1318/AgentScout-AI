@@ -1,67 +1,93 @@
-const { getPredictiveIntelligence } = require('../services/predictiveCareerIntelligence.service');
-const CareerInsight = require('../models/CareerInsight.model');
+const {
+  getCareerIntelligenceOverview,
+  refreshCareerIntelligence,
+  markEventAsRead,
+  archiveEvent
+} = require('../services/careerIntelligence.service');
 
+const { calculateCareerHealth } = require('../services/careerHealth.service');
+const { generateIntelligenceFeed } = require('../services/careerIntelligenceFeed.service');
+const { getCareerEvents } = require('../services/careerEvent.service');
+
+/**
+ * @desc    Get complete Career Intelligence Overview (Health, Highlights, Feed, Events)
+ * @route   GET /api/career-intelligence/overview
+ * @access  Private
+ */
 const getOverview = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
-    const data = await getPredictiveIntelligence(userId, false);
+    const userId = req.user._id || req.user.id;
+    const overview = await getCareerIntelligenceOverview(userId);
     res.status(200).json({
       success: true,
-      data
+      data: overview
     });
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * @desc    Get detailed 7-Category Career Health Data
+ * @route   GET /api/career-intelligence/health
+ * @access  Private
+ */
 const getHealth = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
-    const data = await getPredictiveIntelligence(userId, false);
+    const userId = req.user._id || req.user.id;
+    const health = await calculateCareerHealth(userId);
     res.status(200).json({
       success: true,
-      data: data.careerHealth
+      data: health
     });
   } catch (error) {
     next(error);
   }
 };
 
-const getSkills = async (req, res, next) => {
+/**
+ * @desc    Get ranked AI Intelligence Feed
+ * @route   GET /api/career-intelligence/feed
+ * @access  Private
+ */
+const getFeed = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
-    const data = await getPredictiveIntelligence(userId, false);
+    const userId = req.user._id || req.user.id;
+    const { limit, category, priority } = req.query;
+    const feed = await generateIntelligenceFeed(userId, { limit, category, priority });
     res.status(200).json({
       success: true,
-      data: data.skillGaps
+      data: feed
     });
   } catch (error) {
     next(error);
   }
 };
 
-const getBottlenecks = async (req, res, next) => {
+/**
+ * @desc    Get candidate career timeline events
+ * @route   GET /api/career-intelligence/events
+ * @access  Private
+ */
+const getEvents = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
-    const data = await getPredictiveIntelligence(userId, false);
-    res.status(200).json({
-      success: true,
-      data: data.bottlenecks
+    const userId = req.user._id || req.user.id;
+    const { limit, page, category, priority, unreadOnly } = req.query;
+    const result = await getCareerEvents(userId, {
+      limit,
+      page,
+      category,
+      priority,
+      unreadOnly: unreadOnly === 'true'
     });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getMomentum = async (req, res, next) => {
-  try {
-    const userId = req.user.id || req.user._id;
-    const data = await getPredictiveIntelligence(userId, false);
     res.status(200).json({
       success: true,
-      data: {
-        score: data.careerHealth.breakdown.careerMomentum,
-        category: data.careerHealth.breakdown.careerMomentum >= 75 ? 'ACCELERATING 🚀' : 'PROGRESSING 📈'
+      data: result.events,
+      meta: {
+        total: result.total,
+        unreadCount: result.unreadCount,
+        page: result.page,
+        pages: result.pages
       }
     });
   } catch (error) {
@@ -69,66 +95,56 @@ const getMomentum = async (req, res, next) => {
   }
 };
 
-const getForecast = async (req, res, next) => {
+/**
+ * @desc    Mark a career event as read
+ * @route   PATCH /api/career-intelligence/events/:eventId/read
+ * @access  Private
+ */
+const markRead = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
-    const data = await getPredictiveIntelligence(userId, false);
+    const userId = req.user._id || req.user.id;
+    const { eventId } = req.params;
+    const event = await markEventAsRead(userId, eventId);
     res.status(200).json({
       success: true,
-      data: data.forecasts
+      data: event
     });
   } catch (error) {
     next(error);
   }
 };
 
-const getRisks = async (req, res, next) => {
+/**
+ * @desc    Archive a career event
+ * @route   PATCH /api/career-intelligence/events/:eventId/archive
+ * @access  Private
+ */
+const markArchive = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
-    const data = await getPredictiveIntelligence(userId, false);
+    const userId = req.user._id || req.user.id;
+    const { eventId } = req.params;
+    const event = await archiveEvent(userId, eventId);
     res.status(200).json({
       success: true,
-      data: data.risks
+      data: event
     });
   } catch (error) {
     next(error);
   }
 };
 
-const getInsights = async (req, res, next) => {
+/**
+ * @desc    Force manual recalculation of Career Intelligence (Rate limited)
+ * @route   POST /api/career-intelligence/refresh
+ * @access  Private
+ */
+const refreshIntelligence = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
-    const insights = await CareerInsight.find({ user: userId, status: 'ACTIVE' }).sort({ createdAt: -1 }).lean();
+    const userId = req.user._id || req.user.id;
+    const refreshed = await refreshCareerIntelligence(userId);
     res.status(200).json({
       success: true,
-      data: insights
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getActions = async (req, res, next) => {
-  try {
-    const userId = req.user.id || req.user._id;
-    const data = await getPredictiveIntelligence(userId, false);
-    res.status(200).json({
-      success: true,
-      data: data.roiActions
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const runAnalysis = async (req, res, next) => {
-  try {
-    const userId = req.user.id || req.user._id;
-    const data = await getPredictiveIntelligence(userId, true);
-    res.status(200).json({
-      success: true,
-      message: 'Predictive career intelligence analysis recalculated successfully.',
-      data
+      data: refreshed
     });
   } catch (error) {
     next(error);
@@ -138,12 +154,9 @@ const runAnalysis = async (req, res, next) => {
 module.exports = {
   getOverview,
   getHealth,
-  getSkills,
-  getBottlenecks,
-  getMomentum,
-  getForecast,
-  getRisks,
-  getInsights,
-  getActions,
-  runAnalysis
+  getFeed,
+  getEvents,
+  markRead,
+  markArchive,
+  refreshIntelligence
 };

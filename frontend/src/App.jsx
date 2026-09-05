@@ -105,6 +105,8 @@ function App() {
                       <Route path="/opportunity-monitor" element={<OpportunityMonitor />} />
                       <Route path="/dashboard/career-intelligence" element={<CareerIntelligence />} />
                       <Route path="/career-intelligence" element={<CareerIntelligence />} />
+                      <Route path="/dashboard/intelligence" element={<CareerIntelligence />} />
+                      <Route path="/intelligence" element={<CareerIntelligence />} />
                     </Route>
                   </Route>
 

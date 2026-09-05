@@ -14,6 +14,8 @@ const CareerAgentExecution = require('../models/CareerAgentExecution.model');
 const CareerAgentWorkflow = require('../models/CareerAgentWorkflow.model');
 const CareerAgentActionPackage = require('../models/CareerAgentActionPackage.model');
 const CareerAgentMemory = require('../models/CareerAgentMemory.model');
+const CareerHealth = require('../models/CareerHealth.model');
+const CareerEvent = require('../models/CareerEvent.model');
 
 const { isGeminiConfigured } = require('../config/gemini');
 const { makeGeminiHttpRequest } = require('./gemini.service');
@@ -38,7 +40,9 @@ const buildUserCareerContext = async (userId) => {
     recentExecutions,
     activeWorkflows,
     pendingPackages,
-    agentMemories
+    agentMemories,
+    latestCareerHealth,
+    recentCareerEvents
   ] = await Promise.all([
     User.findById(userId),
     Opportunity.find({ isActive: true }).sort({ postedAt: -1 }).limit(10),
@@ -55,7 +59,9 @@ const buildUserCareerContext = async (userId) => {
     CareerAgentExecution.find({ user: userId }).sort({ createdAt: -1 }).limit(5),
     CareerAgentWorkflow.find({ user: userId, status: { $ne: 'COMPLETED' } }).limit(5),
     CareerAgentActionPackage.find({ user: userId, approvalState: { $in: ['PENDING', 'EDITED'] } }).limit(5),
-    CareerAgentMemory.find({ user: userId }).limit(10)
+    CareerAgentMemory.find({ user: userId }).limit(10),
+    CareerHealth.findOne({ user: userId }).sort({ createdAt: -1 }),
+    CareerEvent.find({ user: userId, isArchived: false }).sort({ occurredAt: -1 }).limit(5)
   ]);
 
   const profile = user ? (user.profile || {}) : {};
@@ -215,7 +221,21 @@ const buildUserCareerContext = async (userId) => {
       activeWorkflows: (activeWorkflows || []).map(w => ({ id: w._id, title: w.title, type: w.type, status: w.status, progress: w.progress })),
       pendingPackages: (pendingPackages || []).map(p => ({ id: p._id, title: p.title, type: p.type, state: p.approvalState })),
       agentMemories: (agentMemories || []).map(m => ({ key: m.key, value: m.value, category: m.category }))
-    }
+    },
+    careerHealth: latestCareerHealth ? {
+      overallScore: latestCareerHealth.overallScore,
+      previousScore: latestCareerHealth.previousScore,
+      change: latestCareerHealth.change,
+      trend: latestCareerHealth.trend,
+      strengths: latestCareerHealth.strengths,
+      concerns: latestCareerHealth.concerns
+    } : null,
+    recentEvents: (recentCareerEvents || []).map(e => ({
+      title: e.title,
+      description: e.description,
+      priority: e.priority,
+      occurredAt: e.occurredAt
+    }))
   };
 };
 
