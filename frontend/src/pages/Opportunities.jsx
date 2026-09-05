@@ -68,7 +68,8 @@ const Opportunities = () => {
         type: filters.type !== "all" ? filters.type : undefined,
         remote: filters.remote !== "all" ? filters.remote : undefined,
         location: filters.location.trim() || undefined,
-        sort: filters.sort !== "highest_match" ? filters.sort : undefined,
+        minScore: filters.minScore > 0 ? filters.minScore : undefined,
+        sort: filters.sort || "newest",
       };
 
       const resData = await getOpportunities(params);

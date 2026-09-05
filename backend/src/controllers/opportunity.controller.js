@@ -95,19 +95,24 @@ const getRecommendedOpportunities = async (req, res, next) => {
  */
 const getOpportunities = async (req, res, next) => {
   try {
+    checkNoMongoOperators(req.query);
+
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
-    const { search, type, remote, sort, location } = req.query;
+    const { search, type, remote, sort, location, minScore } = req.query;
 
     const filter = { isActive: true };
 
-    if (type && ['job', 'internship', 'research'].includes(type.toLowerCase())) {
-      filter.type = type.toLowerCase();
+    if (type && type !== 'all') {
+      const typeLower = type.toLowerCase();
+      if (['job', 'internship', 'research', 'full-time', 'part-time'].includes(typeLower)) {
+        filter.type = typeLower;
+      }
     }
 
-    if (remote !== undefined) {
+    if (remote !== undefined && remote !== 'all') {
       if (remote === 'true' || remote === '1') {
         filter.remote = true;
       } else if (remote === 'false' || remote === '0') {
@@ -128,7 +133,8 @@ const getOpportunities = async (req, res, next) => {
         { title: searchRegex },
         { company: searchRegex },
         { description: searchRegex },
-        { requirements: searchRegex }
+        { requirements: searchRegex },
+        { skills: searchRegex }
       ];
     }
 
@@ -145,7 +151,14 @@ const getOpportunities = async (req, res, next) => {
       .skip(skip)
       .limit(limit);
 
-    const opportunities = rawOpportunities.map(formatOpportunity);
+    let opportunities = rawOpportunities.map(formatOpportunity);
+
+    // Apply minimum score threshold if provided
+    const numericMinScore = parseInt(minScore, 10);
+    if (!isNaN(numericMinScore) && numericMinScore > 0) {
+      opportunities = opportunities.filter(o => (o.matchScore || o.score || 75) >= numericMinScore);
+    }
+
     const pages = Math.ceil(total / limit) || 0;
 
     res.status(200).json({
