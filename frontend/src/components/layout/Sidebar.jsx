@@ -45,12 +45,7 @@ const navigationSections = [
         icon: Brain,
       },
       {
-        label: "Application Agent",
-        path: "/dashboard/application-agent",
-        icon: Bot,
-      },
-      {
-        label: "Opp Monitor",
+        label: "Opportunity Monitor",
         path: "/dashboard/opportunity-monitor",
         icon: Radio,
       },
@@ -90,9 +85,9 @@ const navigationSections = [
         icon: Brain,
       },
       {
-        label: "Career Copilot",
-        path: "/dashboard/career-copilot",
-        icon: BriefcaseBusiness,
+        label: "Resume",
+        path: "/dashboard/resume",
+        icon: FileText,
       },
     ],
   },
@@ -104,25 +99,20 @@ const navigationSections = [
         path: "/dashboard/analytics",
         icon: BarChart3,
       },
-      {
-        label: "Resume",
-        path: "/dashboard/resume",
-        icon: FileText,
-      },
     ],
   },
   {
     title: "ACCOUNT",
     items: [
       {
-        label: "Settings",
-        path: "/dashboard/settings",
-        icon: Settings,
-      },
-      {
         label: "Profile",
         path: "/profile",
         icon: UserRound,
+      },
+      {
+        label: "Settings",
+        path: "/dashboard/settings",
+        icon: Settings,
       },
     ],
   },

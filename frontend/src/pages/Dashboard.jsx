@@ -1,34 +1,17 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Sparkles,
-  Search,
-  BookmarkCheck,
-  Briefcase,
-  Trophy,
-  ArrowRight,
-  RefreshCw,
-  AlertCircle,
-  ChevronRight,
-  UserCheck,
-  Bell,
-  FileText,
-  CheckSquare,
-  Brain,
-  Target,
-  Radio,
-} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import ProfileSummaryCard from "../components/common/ProfileSummaryCard";
-import MatchStatistics from "../components/dashboard/MatchStatistics";
-import ApplicationStatistics from "../components/dashboard/ApplicationStatistics";
-import OpportunityCard from "../components/common/OpportunityCard";
-import RecentApplications from "../components/dashboard/RecentApplications";
-import CareerCopilotPreview from "../components/dashboard/CareerCopilotPreview";
-import NotificationItem from "../components/notifications/NotificationItem";
+
+import DashboardHero from "../components/dashboard/DashboardHero";
+import NextBestActionCard from "../components/dashboard/NextBestActionCard";
+import CareerSnapshot from "../components/dashboard/CareerSnapshot";
+import TodayFocus from "../components/dashboard/TodayFocus";
+import OpportunitySpotlight from "../components/dashboard/OpportunitySpotlight";
+import AgentStatusCard from "../components/dashboard/AgentStatusCard";
+import RecentActivitySection from "../components/dashboard/RecentActivitySection";
+
 import { getRecommendedOpportunities } from "../services/opportunities.api";
 import { getApplications, getApplicationAnalytics } from "../services/applications.api";
-import { getCareerCopilotPlan } from "../services/careerCopilot.api";
 import { getNotifications } from "../services/notifications.api";
 import { getResume } from "../services/resume.api";
 import { getInterviewReadiness } from "../services/interview.api";
@@ -36,68 +19,26 @@ import { getTodayPlan } from "../services/careerPlanner.api";
 import { getMonitor } from "../services/opportunityMonitor.api";
 import { getSnapshot as getOSSnapshot } from "../services/careerOS.api";
 
-// Time-based greeting helper
-const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-};
-
-// Profile completion calculator
-const calculateProfileCompletion = (user) => {
-  if (!user) return { percentage: 0, missingFields: [] };
-  let score = 0;
-  const missingFields = [];
-
-  if (user.firstName) score += 15; else missingFields.push("First Name");
-  if (user.lastName) score += 15; else missingFields.push("Last Name");
-  if (user.email) score += 20; else missingFields.push("Email");
-
-  const p = user.profile || {};
-  if (p.targetRole || p.headline) score += 20; else missingFields.push("Target Role");
-  if (Array.isArray(p.skills) && p.skills.length > 0) score += 15; else missingFields.push("Skills");
-  if (p.location) score += 15; else missingFields.push("Location");
-
-  return { percentage: Math.min(100, score), missingFields };
-};
-
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Independent state for each section
+  // Independent per-section states for zero blocking
   const [recommendations, setRecommendations] = useState([]);
   const [recLoading, setRecLoading] = useState(true);
   const [recError, setRecError] = useState(null);
 
   const [applications, setApplications] = useState([]);
-  const [appLoading, setAppLoading] = useState(true);
-  const [appError, setAppError] = useState(null);
-
-  const [analytics, setAnalytics] = useState(null);
-  const [analyticsLoading, setAnalyticsLoading] = useState(true);
-  const [analyticsError, setAnalyticsError] = useState(null);
-
-  const [copilot, setCopilot] = useState(null);
-  const [copilotLoading, setCopilotLoading] = useState(true);
-
   const [recentActivities, setRecentActivities] = useState([]);
   const [actLoading, setActLoading] = useState(true);
 
   const [resumeData, setResumeData] = useState(null);
-  const [resumeLoading, setResumeLoading] = useState(true);
-
   const [interviewReadiness, setInterviewReadiness] = useState(null);
   const [plannerData, setPlannerData] = useState(null);
   const [monitorData, setMonitorData] = useState(null);
   const [osSnapshot, setOsSnapshot] = useState(null);
 
-  const firstName = user?.firstName || user?.name || "Candidate";
-  const greeting = getGreeting();
-  const profileCompletion = calculateProfileCompletion(user);
-
-  // Fetch Recommended Opportunities
+  // Independent asynchronous fetch handlers
   const fetchRecommendations = async () => {
     setRecLoading(true);
     setRecError(null);
@@ -106,680 +47,145 @@ const Dashboard = () => {
       const list = resData.opportunities || resData.data || resData || [];
       setRecommendations(Array.isArray(list) ? list : []);
     } catch (err) {
-      setRecError("Unable to load recommended opportunities.");
+      setRecError("Unable to load top recommended opportunities.");
     } finally {
       setRecLoading(false);
     }
   };
 
-  // Fetch Applications
   const fetchApplications = async () => {
-    setAppLoading(true);
-    setAppError(null);
     try {
       const resData = await getApplications();
       const list = resData.applications || resData.data || resData || [];
       setApplications(Array.isArray(list) ? list : []);
     } catch (err) {
-      setAppError("Unable to load recent applications.");
-    } finally {
-      setAppLoading(false);
+      // Non-blocking
     }
   };
 
-  // Fetch Analytics
-  const fetchAnalytics = async () => {
-    setAnalyticsLoading(true);
-    setAnalyticsError(null);
-    try {
-      const resData = await getApplicationAnalytics();
-      setAnalytics(resData.data || resData.analytics || resData || {});
-    } catch (err) {
-      setAnalyticsError("Unable to load application pipeline analytics.");
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  };
-
-  // Fetch Career Copilot Preview
-  const fetchCopilot = async () => {
-    setCopilotLoading(true);
-    try {
-      const resData = await getCareerCopilotPlan();
-      setCopilot(resData.data || resData.copilot || resData || null);
-    } catch (err) {
-      // Ignore
-    } finally {
-      setCopilotLoading(false);
-    }
-  };
-
-  // Fetch Recent Activities for Activity Section
   const fetchRecentActivities = async () => {
     setActLoading(true);
     try {
-      const resData = await getNotifications({ page: 1, limit: 5 });
+      const resData = await getNotifications({ page: 1, limit: 4 });
       const list = resData.notifications || resData.data || [];
       setRecentActivities(Array.isArray(list) ? list : []);
     } catch (err) {
-      // Ignore
+      // Non-blocking
     } finally {
       setActLoading(false);
     }
   };
 
-  // Fetch Resume Health Data
   const fetchResumeHealth = async () => {
-    setResumeLoading(true);
     try {
       const resData = await getResume();
       setResumeData(resData.resume || null);
     } catch (err) {
-      // Ignore
-    } finally {
-      setResumeLoading(false);
+      // Non-blocking
     }
   };
 
-  // Fetch Interview Readiness Data
   const fetchInterviewData = async () => {
     try {
       const res = await getInterviewReadiness();
       setInterviewReadiness(res.data || null);
     } catch (err) {
-      // Ignore
+      // Non-blocking
     }
   };
 
-  // Fetch Planner Data
   const fetchPlanner = async () => {
     try {
       const res = await getTodayPlan();
       setPlannerData(res.data || null);
     } catch (err) {
-      // Ignore
+      // Non-blocking
     }
   };
 
-  // Fetch Monitor Data
   const fetchMonitorData = async () => {
     try {
       const res = await getMonitor();
       setMonitorData(res.data || null);
     } catch (err) {
-      // Ignore
+      // Non-blocking
     }
   };
 
-  // Fetch Career OS Snapshot Data
   const fetchOS = async () => {
     try {
       const res = await getOSSnapshot();
       setOsSnapshot(res.data || null);
     } catch (err) {
-      // Ignore
+      // Non-blocking
     }
   };
 
   useEffect(() => {
-    fetchRecommendations();
-    fetchApplications();
-    fetchAnalytics();
-    fetchCopilot();
-    fetchRecentActivities();
-    fetchResumeHealth();
-    fetchInterviewData();
-    fetchPlanner();
-    fetchMonitorData();
-    fetchOS();
+    // Parallel non-blocking execution using Promise.allSettled
+    Promise.allSettled([
+      fetchRecommendations(),
+      fetchApplications(),
+      fetchRecentActivities(),
+      fetchResumeHealth(),
+      fetchInterviewData(),
+      fetchPlanner(),
+      fetchMonitorData(),
+      fetchOS(),
+    ]);
   }, []);
 
-  // Compute KPI Values
-  const topMatchScore = recommendations.length > 0
-    ? Math.max(...recommendations.map(r => r.matchScore || r.score || 0))
-    : 0;
-
-  const totalMatchesCount = recommendations.length;
-  const interviewsCount = analytics?.byStatus?.interview || 0;
-  const offersCount = analytics?.byStatus?.offer || 0;
-
-  const resumeScores = resumeData?.scores || { ats: 0, completeness: 0, skillsCoverage: 0 };
-  const readScore = interviewReadiness?.readinessScore || 75;
-
   return (
-    <div className="dashboard-page">
+    <div className="dashboard-clean-container">
+      {/* SECTION 1 — WELCOME HERO */}
+      <DashboardHero
+        user={user}
+        osSnapshot={osSnapshot}
+        onNavigate={navigate}
+      />
 
-      {/* 1. Welcome Header & Profile Completion */}
-      <div className="dashboard-welcome-container">
-        <div className="welcome-banner" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <img src="/logo.jpg" alt="AgentScout AI Logo" style={{ width: '56px', height: '56px', borderRadius: '14px', objectFit: 'contain', background: '#ffffff', padding: '4px', boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }} />
-          <div>
-            <span className="eyebrow">CAREER COMMAND CENTER</span>
-            <h2 style={{ margin: '4px 0 8px 0' }}>
-              {greeting}, {firstName} 👋
-            </h2>
-            <p style={{ margin: 0 }}>
-              Let's secure your next career move with AgentScout AI.
-            </p>
-          </div>
-        </div>
+      {/* SECTION 2 — THE MOST IMPORTANT CARD */}
+      <NextBestActionCard
+        osSnapshot={osSnapshot}
+        plannerData={plannerData}
+        onNavigate={navigate}
+      />
 
-        <div className="profile-completion-card">
-          <div className="completion-header">
-            <div className="completion-title">
-              <UserCheck size={18} />
-              <span>Profile Completion</span>
-            </div>
-            <strong className="completion-percent">{profileCompletion.percentage}%</strong>
-          </div>
+      {/* SECTION 3 — CAREER SNAPSHOT */}
+      <CareerSnapshot
+        osSnapshot={osSnapshot}
+        resumeData={resumeData}
+        applicationsCount={applications.length}
+        interviewReadiness={interviewReadiness}
+      />
 
-          <div className="progress-bar-bg">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${profileCompletion.percentage}%` }}
-            />
-          </div>
+      {/* SECTION 4 — TODAY'S PLAN */}
+      <TodayFocus
+        plannerData={plannerData}
+        onNavigate={navigate}
+      />
 
-          <button
-            type="button"
-            className="completion-action-btn"
-            onClick={() => navigate("/dashboard/profile")}
-          >
-            <span>{profileCompletion.percentage === 100 ? "View Profile" : "Complete Profile"}</span>
-            <ChevronRight size={15} />
-          </button>
-        </div>
-      </div>
+      {/* SECTION 5 — OPPORTUNITY SPOTLIGHT */}
+      <OpportunitySpotlight
+        recommendations={recommendations}
+        loading={recLoading}
+        error={recError}
+        onNavigate={navigate}
+      />
 
-      {/* 2. KPI Cards Grid */}
-      <div className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper match-icon">
-            <Sparkles size={20} />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Top Match Score</span>
-            <strong className="kpi-value">{topMatchScore > 0 ? `${topMatchScore}%` : "—"}</strong>
-          </div>
-        </div>
+      {/* SECTION 6 — AI AGENT STATUS */}
+      <AgentStatusCard
+        osSnapshot={osSnapshot}
+        monitorData={monitorData}
+        onNavigate={navigate}
+      />
 
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper search-icon">
-            <Search size={20} />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Total Matches</span>
-            <strong className="kpi-value">{recLoading ? "..." : totalMatchesCount}</strong>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper app-icon">
-            <BookmarkCheck size={20} />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Applications</span>
-            <strong className="kpi-value">{appLoading ? "..." : applications.length}</strong>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper interview-icon">
-            <Briefcase size={20} />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Interviews</span>
-            <strong className="kpi-value">{analyticsLoading ? "..." : interviewsCount}</strong>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper offer-icon">
-            <Trophy size={20} />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Offers</span>
-            <strong className="kpi-value">{analyticsLoading ? "..." : offersCount}</strong>
-          </div>
-        </div>
-      </div>
-
-      <div className="dashboard-grid-layout">
-        
-        {/* Left Column: Match Statistics, Recommended Opportunities & Recent Applications */}
-        <div className="dashboard-main-column">
-
-          {/* Match Statistics Component */}
-          <MatchStatistics />
-          
-          {/* Recommended Opportunities using OpportunityCard */}
-          <section className="dashboard-card-section">
-            <div className="section-header-flex">
-              <div>
-                <span className="eyebrow">AI RECOMMENDED</span>
-                <h3>Top Matches for You</h3>
-              </div>
-
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/opportunities")}
-              >
-                <span>View All ({recommendations.length})</span>
-                <ArrowRight size={16} />
-              </button>
-            </div>
-
-            {recLoading ? (
-              <div className="skeleton-list">
-                <div className="skeleton-card" />
-                <div className="skeleton-card" />
-                <div className="skeleton-card" />
-              </div>
-            ) : recError ? (
-              <div className="inline-error-state">
-                <AlertCircle size={20} />
-                <span>{recError}</span>
-                <button type="button" onClick={fetchRecommendations} className="retry-btn">
-                  <RefreshCw size={14} /> Retry
-                </button>
-              </div>
-            ) : recommendations.length === 0 ? (
-              <div className="empty-state-box">
-                <Search size={32} className="empty-icon" />
-                <h4>No Recommendations Yet</h4>
-                <p>Complete your profile skills to start receiving AI-matched career opportunities.</p>
-                <button
-                  type="button"
-                  className="primary-action-btn"
-                  onClick={() => navigate("/dashboard/profile")}
-                >
-                  Update Profile Skills
-                </button>
-              </div>
-            ) : (
-              <div className="recommendations-list">
-                {recommendations.slice(0, 3).map((opp) => (
-                  <OpportunityCard key={opp._id || opp.id} opportunity={opp} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Reusable Recent Applications Component */}
-          <RecentApplications initialApplications={applications} />
-        </div>
-
-        {/* Right Column: Career Agent, Career OS, Opportunity Monitor, Today's Plan & Widgets */}
-        <div className="dashboard-side-column">
-
-          {/* Compact AI Career Agent Widget (Phase 17.0) */}
-          <div className="dashboard-side-card" style={{ border: "2px solid #6366f1", background: "linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(79, 70, 229, 0.02) 100%)" }}>
-            <div className="section-header-flex">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Sparkles size={18} style={{ color: "#818cf8" }} />
-                <h4 style={{ margin: 0, color: "#ffffff" }}>AI Career Agent</h4>
-              </div>
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/dashboard/agent")}
-              >
-                <span>Agent Center →</span>
-              </button>
-            </div>
-
-            <div style={{ marginTop: "10px" }}>
-              <div className="flex-between" style={{ fontSize: "12px" }}>
-                <span>Career Readiness</span>
-                <strong style={{ color: "#818cf8", fontSize: "15px" }}>{osSnapshot?.careerScore || 75}%</strong>
-              </div>
-              <div className="progress-bar-bg" style={{ height: "6px", margin: "4px 0 8px 0" }}>
-                <div className="progress-bar-fill" style={{ width: `${osSnapshot?.careerScore || 75}%`, background: "#6366f1" }} />
-              </div>
-
-              <div style={{ margin: "6px 0 10px 0", fontSize: "12px" }}>
-                <span style={{ fontSize: "10px", fontWeight: 700, color: "#818cf8", textTransform: "uppercase" }}>NEXT BEST ACTION</span>
-                <p style={{ margin: "2px 0 0 0", color: "#e4e4e7", fontWeight: 600 }}>{osSnapshot?.actionState?.nextBestAction?.title || "Optimize Resume ATS Score"}</p>
-              </div>
-
-              <button
-                type="button"
-                className="save-profile-btn"
-                style={{ width: "100%", padding: "8px 12px", fontSize: "12px", justifyContent: "center", background: "#6366f1", border: "none" }}
-                onClick={() => navigate("/dashboard/agent")}
-              >
-                Run AI Career Agent
-              </button>
-            </div>
-          </div>
-
-          {/* Compact AI Application Agent Widget (Phase 18.0) */}
-          <div className="dashboard-side-card" style={{ border: "2px solid #10b981", background: "linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%)" }}>
-            <div className="section-header-flex">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <CheckSquare size={18} style={{ color: "#10b981" }} />
-                <h4 style={{ margin: 0 }}>AI Application Agent</h4>
-              </div>
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/dashboard/application-agent")}
-              >
-                <span>Agent Center →</span>
-              </button>
-            </div>
-
-            <div style={{ marginTop: "10px" }}>
-              <div className="flex-between" style={{ fontSize: "12px" }}>
-                <span>Application Readiness</span>
-                <strong style={{ color: "#10b981", fontSize: "15px" }}>87%</strong>
-              </div>
-              <div className="progress-bar-bg" style={{ height: "6px", margin: "4px 0 8px 0" }}>
-                <div className="progress-bar-fill" style={{ width: "87%", background: "#10b981" }} />
-              </div>
-
-              <div style={{ margin: "6px 0 10px 0", fontSize: "12px" }}>
-                <span style={{ fontSize: "10px", fontWeight: 700, color: "#10b981", textTransform: "uppercase" }}>NEXT BEST ACTION</span>
-                <p style={{ margin: "2px 0 0 0", color: "#e4e4e7", fontWeight: 600 }}>Optimize Resume & Draft Cover Letter</p>
-              </div>
-
-              <button
-                type="button"
-                className="save-profile-btn"
-                style={{ width: "100%", padding: "8px 12px", fontSize: "12px", justifyContent: "center", background: "#10b981", border: "none" }}
-                onClick={() => navigate("/dashboard/application-agent")}
-              >
-                Open Application Agent
-              </button>
-            </div>
-          </div>
-
-          {/* Compact Career OS Command Center Widget (Phase 17.0) */}
-          <div className="dashboard-side-card" style={{ border: "2px solid var(--primary-light)" }}>
-            <div className="section-header-flex">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Brain size={18} className="text-primary" />
-                <h4 style={{ margin: 0 }}>Career Operating System</h4>
-              </div>
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/dashboard/career-os")}
-              >
-                <span>Open OS →</span>
-              </button>
-            </div>
-
-            <div style={{ marginTop: "10px" }}>
-              <div className="flex-between" style={{ fontSize: "12px" }}>
-                <span>Career Score</span>
-                <strong className="text-primary" style={{ fontSize: "15px" }}>{osSnapshot?.careerScore || 75}/100</strong>
-              </div>
-              <div className="progress-bar-bg" style={{ height: "6px", margin: "4px 0 8px 0" }}>
-                <div className="progress-bar-fill" style={{ width: `${osSnapshot?.careerScore || 75}%` }} />
-              </div>
-
-              {osSnapshot?.actionState?.nextBestAction ? (
-                <div style={{ margin: "6px 0 10px 0", fontSize: "12px" }}>
-                  <strong className="text-primary">Highest Impact Priority:</strong>
-                  <p className="notif-subtext" style={{ margin: "2px 0 0 0" }}>{osSnapshot.actionState.nextBestAction.title}</p>
-                </div>
-              ) : (
-                <div className="notif-subtext" style={{ margin: "6px 0 10px 0" }}>View intelligent career briefing and next actions.</div>
-              )}
-
-              <button
-                type="button"
-                className="save-profile-btn"
-                style={{ width: "100%", padding: "6px 12px", fontSize: "12px", justifyContent: "center" }}
-                onClick={() => navigate("/dashboard/career-os")}
-              >
-                Open Career OS Command Center
-              </button>
-            </div>
-          </div>
-
-          {/* Compact AI Opportunity Monitor Widget (Part 25) */}
-          <div className="dashboard-side-card">
-            <div className="section-header-flex">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Radio size={18} className="text-primary" />
-                <h4 style={{ margin: 0 }}>AI Opportunity Monitor</h4>
-              </div>
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/dashboard/opportunity-monitor")}
-              >
-                <span>Open Monitor →</span>
-              </button>
-            </div>
-
-            <div style={{ marginTop: "10px" }}>
-              <div className="flex-between" style={{ fontSize: "12px" }}>
-                <span>Monitoring Status</span>
-                <strong className={monitorData?.enabled !== false ? "text-success" : "text-muted"}>
-                  {monitorData?.enabled !== false ? "Active ●" : "Paused ⏸"}
-                </strong>
-              </div>
-              <p className="notif-subtext" style={{ margin: "4px 0 8px 0", fontSize: "12px" }}>
-                AgentScout is watching active market roles for candidate matches.
-              </p>
-
-              <button
-                type="button"
-                className="primary-action-btn"
-                style={{ width: "100%", padding: "6px 12px", fontSize: "12px" }}
-                onClick={() => navigate("/dashboard/opportunity-monitor")}
-              >
-                View Opportunity Monitor
-              </button>
-            </div>
-          </div>
-
-          {/* Compact Today's Career Plan Widget (Part 24) */}
-          <div className="dashboard-side-card">
-            <div className="section-header-flex">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Target size={18} className="text-primary" />
-                <h4 style={{ margin: 0 }}>Today's Career Plan</h4>
-              </div>
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/dashboard/career-planner")}
-              >
-                <span>View Plan →</span>
-              </button>
-            </div>
-
-            <div style={{ marginTop: "10px" }}>
-              <div className="flex-between" style={{ fontSize: "12px" }}>
-                <span>Execution Rate</span>
-                <strong className="text-primary">{plannerData?.completionPercentage || 0}%</strong>
-              </div>
-              <div className="progress-bar-bg" style={{ height: "6px", margin: "4px 0 8px 0" }}>
-                <div className="progress-bar-fill" style={{ width: `${plannerData?.completionPercentage || 0}%` }} />
-              </div>
-
-              {plannerData?.nextBestAction ? (
-                <div style={{ margin: "6px 0 10px 0", fontSize: "12px" }}>
-                  <strong className="text-primary">Next Best Action:</strong>
-                  <p className="notif-subtext" style={{ margin: "2px 0 0 0" }}>{plannerData.nextBestAction.title}</p>
-                </div>
-              ) : (
-                <div className="notif-subtext" style={{ margin: "6px 0 10px 0" }}>Review today's personalized execution priorities.</div>
-              )}
-
-              <button
-                type="button"
-                className="primary-action-btn"
-                style={{ width: "100%", padding: "6px 12px", fontSize: "12px" }}
-                onClick={() => navigate("/dashboard/career-planner")}
-              >
-                View Career Plan
-              </button>
-            </div>
-          </div>
-
-          {/* Compact Interview Coach Widget (Part 23) */}
-          <div className="dashboard-side-card">
-            <div className="section-header-flex">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Brain size={18} className="text-primary" />
-                <h4 style={{ margin: 0 }}>Interview Coach</h4>
-              </div>
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/dashboard/interview-coach")}
-              >
-                <span>Practice →</span>
-              </button>
-            </div>
-
-            <div style={{ marginTop: "10px" }}>
-              <div className="flex-between" style={{ fontSize: "12px" }}>
-                <span>Interview Readiness</span>
-                <strong className="text-success">{readScore}%</strong>
-              </div>
-              <div className="progress-bar-bg" style={{ height: "6px", margin: "4px 0 8px 0" }}>
-                <div className="progress-bar-fill" style={{ width: `${readScore}%` }} />
-              </div>
-
-              <button
-                type="button"
-                className="primary-action-btn"
-                style={{ width: "100%", padding: "6px 12px", fontSize: "12px" }}
-                onClick={() => navigate("/dashboard/interview-coach")}
-              >
-                Practice Mock Interview
-              </button>
-            </div>
-          </div>
-
-          {/* Compact Application Intelligence Widget (Part 22) */}
-          <div className="dashboard-side-card">
-            <div className="section-header-flex">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <CheckSquare size={18} className="text-primary" />
-                <h4 style={{ margin: 0 }}>Application Intelligence</h4>
-              </div>
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/dashboard/application-assistant")}
-              >
-                <span>Prepare App →</span>
-              </button>
-            </div>
-
-            <div style={{ marginTop: "10px" }}>
-              {recommendations.length > 0 ? (
-                <div>
-                  <strong style={{ fontSize: "13px" }}>{recommendations[0].title}</strong>
-                  <p className="notif-subtext" style={{ margin: "2px 0 8px 0" }}>{recommendations[0].company}</p>
-                  <button
-                    type="button"
-                    className="primary-action-btn"
-                    style={{ width: "100%", padding: "6px 12px", fontSize: "12px" }}
-                    onClick={() => navigate(`/dashboard/application-assistant?opportunity=${recommendations[0]._id || recommendations[0].id}`)}
-                  >
-                    Prepare Application
-                  </button>
-                </div>
-              ) : (
-                <div className="notif-subtext">Select an opportunity in Application Assistant to generate tailored cover letters and readiness scores.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Compact Resume Health Widget (Part 22) */}
-          <div className="dashboard-side-card">
-            <div className="section-header-flex">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <FileText size={18} className="text-primary" />
-                <h4 style={{ margin: 0 }}>Resume Health</h4>
-              </div>
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/dashboard/resume")}
-              >
-                <span>Improve Resume →</span>
-              </button>
-            </div>
-
-            <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
-              {resumeLoading ? (
-                <div className="notif-subtext">Loading resume score...</div>
-              ) : !resumeData ? (
-                <div className="notif-subtext">No resume uploaded yet. Upload a PDF/DOCX resume for ATS scoring.</div>
-              ) : (
-                <>
-                  <div className="flex-between" style={{ fontSize: "12px" }}>
-                    <span>ATS Score</span>
-                    <strong>{resumeScores.ats}%</strong>
-                  </div>
-                  <div className="progress-bar-bg" style={{ height: "6px" }}>
-                    <div className="progress-bar-fill" style={{ width: `${resumeScores.ats}%` }} />
-                  </div>
-
-                  <div className="flex-between" style={{ fontSize: "12px", marginTop: "4px" }}>
-                    <span>Completeness</span>
-                    <strong>{resumeScores.completeness}%</strong>
-                  </div>
-                  <div className="flex-between" style={{ fontSize: "12px" }}>
-                    <span>Skills Coverage</span>
-                    <strong>{resumeScores.skillsCoverage}%</strong>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Compact Recent Activity Section (Section 18) */}
-          <div className="dashboard-side-card">
-            <div className="section-header-flex">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Bell size={18} className="text-primary" />
-                <h4 style={{ margin: 0 }}>Recent Activity</h4>
-              </div>
-              <button
-                type="button"
-                className="section-link-btn"
-                onClick={() => navigate("/dashboard/notifications")}
-              >
-                <span>View all activity</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-
-            <div className="dashboard-recent-activity-list" style={{ marginTop: "10px" }}>
-              {actLoading ? (
-                <div className="notif-subtext">Loading recent activity...</div>
-              ) : recentActivities.length === 0 ? (
-                <div className="notif-subtext">No recent activity.</div>
-              ) : (
-                recentActivities.slice(0, 5).map((n) => (
-                  <NotificationItem key={n._id || n.id} notification={n} compact />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Reusable Profile Summary Card */}
-          <ProfileSummaryCard initialData={user} />
-
-          {/* Reusable Application Statistics Component */}
-          <ApplicationStatistics initialAnalytics={analytics} />
-
-          {/* Reusable Career Copilot Preview Card */}
-          <CareerCopilotPreview initialCopilot={copilot} />
-
-        </div>
-      </div>
+      {/* SECTION 7 — ACTIVITY TIMELINE */}
+      <RecentActivitySection
+        recentActivities={recentActivities}
+        loading={actLoading}
+        onNavigate={navigate}
+      />
     </div>
   );
 };
