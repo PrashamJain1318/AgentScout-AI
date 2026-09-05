@@ -10,6 +10,8 @@ const pageTitles = {
   "/agent": "AI Career Agent",
   "/dashboard/career-os": "Career Operating System",
   "/career-os": "Career Operating System",
+  "/dashboard/application-agent": "AI Application Agent",
+  "/application-agent": "AI Application Agent",
   "/dashboard/profile": "Candidate Profile",
   "/profile": "Candidate Profile",
   "/opportunities": "Opportunities Explorer",

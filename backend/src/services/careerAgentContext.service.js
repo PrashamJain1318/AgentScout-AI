@@ -9,6 +9,7 @@ const CareerActionPlan = require('../models/CareerActionPlan.model');
 const OpportunityMonitor = require('../models/OpportunityMonitor.model');
 const Notification = require('../models/Notification.model');
 const CareerOSSnapshot = require('../models/CareerOSSnapshot.model');
+const ApplicationAgent = require('../models/ApplicationAgent.model');
 
 /**
  * Unified Career Context Service
@@ -30,7 +31,8 @@ const buildUnifiedContext = async (userId) => {
     opportunityMonitor,
     appAssistantRecords,
     latestNotifications,
-    latestOSSnapshot
+    latestOSSnapshot,
+    applicationAgent
   ] = await Promise.all([
     User.findById(userId).lean(),
     Resume.findOne({ user: userId }).lean(),
@@ -41,7 +43,8 @@ const buildUnifiedContext = async (userId) => {
     OpportunityMonitor.findOne({ user: userId }).populate('watchlist.opportunity').lean(),
     ApplicationAssistant.find({ user: userId }).lean(),
     Notification.find({ user: userId }).sort({ createdAt: -1 }).limit(10).lean(),
-    CareerOSSnapshot.findOne({ user: userId }).sort({ generatedAt: -1 }).lean()
+    CareerOSSnapshot.findOne({ user: userId }).sort({ generatedAt: -1 }).lean(),
+    ApplicationAgent.findOne({ user: userId }).populate('currentOpportunity').lean()
   ]);
 
   if (!user) {
@@ -220,7 +223,24 @@ const buildUnifiedContext = async (userId) => {
       ...(totalApplications === 0 ? [{ severity: 'MEDIUM', title: 'Empty Application Pipeline', explanation: 'No active job applications submitted yet.', recommendation: 'Select high-match opportunities and apply.', deepLink: '/dashboard/opportunities' }] : [])
     ],
     strengths: marketStrengths,
-    gaps: marketGaps
+    gaps: marketGaps,
+    applicationAgent: applicationAgent ? {
+      status: applicationAgent.status,
+      mode: applicationAgent.mode,
+      readiness: applicationAgent.readinessMetrics?.overall || 75,
+      currentOpportunity: applicationAgent.currentOpportunity ? {
+        id: applicationAgent.currentOpportunity._id,
+        title: applicationAgent.currentOpportunity.title,
+        company: applicationAgent.currentOpportunity.company
+      } : null,
+      nextAction: applicationAgent.readinessMetrics?.overall < 80 ? 'Optimize Resume for target role' : 'Review application package'
+    } : {
+      status: 'IDLE',
+      mode: 'ASSISTED',
+      readiness: 75,
+      currentOpportunity: null,
+      nextAction: 'Select a target opportunity to start Application Agent'
+    }
   };
 };
 

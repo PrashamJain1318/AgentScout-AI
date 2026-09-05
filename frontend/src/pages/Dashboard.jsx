@@ -454,6 +454,47 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Compact AI Application Agent Widget (Phase 18.0) */}
+          <div className="dashboard-side-card" style={{ border: "2px solid #10b981", background: "linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%)" }}>
+            <div className="section-header-flex">
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <CheckSquare size={18} style={{ color: "#10b981" }} />
+                <h4 style={{ margin: 0 }}>AI Application Agent</h4>
+              </div>
+              <button
+                type="button"
+                className="section-link-btn"
+                onClick={() => navigate("/dashboard/application-agent")}
+              >
+                <span>Agent Center →</span>
+              </button>
+            </div>
+
+            <div style={{ marginTop: "10px" }}>
+              <div className="flex-between" style={{ fontSize: "12px" }}>
+                <span>Application Readiness</span>
+                <strong style={{ color: "#10b981", fontSize: "15px" }}>87%</strong>
+              </div>
+              <div className="progress-bar-bg" style={{ height: "6px", margin: "4px 0 8px 0" }}>
+                <div className="progress-bar-fill" style={{ width: "87%", background: "#10b981" }} />
+              </div>
+
+              <div style={{ margin: "6px 0 10px 0", fontSize: "12px" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: "#10b981", textTransform: "uppercase" }}>NEXT BEST ACTION</span>
+                <p style={{ margin: "2px 0 0 0", color: "#e4e4e7", fontWeight: 600 }}>Optimize Resume & Draft Cover Letter</p>
+              </div>
+
+              <button
+                type="button"
+                className="save-profile-btn"
+                style={{ width: "100%", padding: "8px 12px", fontSize: "12px", justifyContent: "center", background: "#10b981", border: "none" }}
+                onClick={() => navigate("/dashboard/application-agent")}
+              >
+                Open Application Agent
+              </button>
+            </div>
+          </div>
+
           {/* Compact Career OS Command Center Widget (Phase 17.0) */}
           <div className="dashboard-side-card" style={{ border: "2px solid var(--primary-light)" }}>
             <div className="section-header-flex">

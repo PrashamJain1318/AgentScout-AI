@@ -37,6 +37,7 @@ const CareerPlanner = lazy(() => import("./pages/CareerPlanner"));
 const OpportunityMonitor = lazy(() => import("./pages/OpportunityMonitor"));
 const CareerOS = lazy(() => import("./pages/CareerOS"));
 const CareerAgent = lazy(() => import("./pages/CareerAgent"));
+const ApplicationAgent = lazy(() => import("./pages/ApplicationAgent"));
 
 const PageSuspenseFallback = () => (
   <div className="skeleton-details-body" style={{ minHeight: "360px", margin: "24px" }} />
@@ -92,6 +93,16 @@ function App() {
                   <Route
                     path="/career-os"
                     element={<CareerOS />}
+                  />
+
+                  <Route
+                    path="/dashboard/application-agent"
+                    element={<ApplicationAgent />}
+                  />
+
+                  <Route
+                    path="/application-agent"
+                    element={<ApplicationAgent />}
                   />
 
                   <Route

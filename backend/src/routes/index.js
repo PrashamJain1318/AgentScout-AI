@@ -18,6 +18,7 @@ const careerPlannerRoutes = require('./careerPlanner.routes');
 const opportunityMonitorRoutes = require('./opportunityMonitor.routes');
 const careerOSRoutes = require('./careerOS.routes');
 const careerAgentRoutes = require('./careerAgent.routes');
+const applicationAgentRoutes = require('./applicationAgent.routes');
 
 const router = express.Router();
 
@@ -41,5 +42,6 @@ router.use('/career-planner', careerPlannerRoutes);
 router.use('/opportunity-monitor', opportunityMonitorRoutes);
 router.use('/career-os', careerOSRoutes);
 router.use('/career-agent', careerAgentRoutes);
+router.use('/application-agent', applicationAgentRoutes);
 
 module.exports = router;

@@ -37,6 +37,11 @@ const navigation = [
     icon: Brain,
   },
   {
+    label: "Application Agent",
+    path: "/dashboard/application-agent",
+    icon: Bot,
+  },
+  {
     label: "Opp Monitor",
     path: "/dashboard/opportunity-monitor",
     icon: Radio,
@@ -130,6 +135,15 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         current === "/dashboard/career-os" ||
         current.startsWith("/career-os/") ||
         current.startsWith("/dashboard/career-os/")
+      );
+    }
+
+    if (navPath === "/dashboard/application-agent") {
+      return (
+        current === "/application-agent" ||
+        current === "/dashboard/application-agent" ||
+        current.startsWith("/application-agent/") ||
+        current.startsWith("/dashboard/application-agent/")
       );
     }
 
