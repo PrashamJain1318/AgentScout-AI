@@ -29,6 +29,9 @@ const apiRouter = require('./routes');
 
 const app = express();
 
+// Trust reverse proxy (Vercel / AWS / Cloudflare) for rate limiting & IP detection
+app.set('trust proxy', 1);
+
 // 1. Security HTTP Headers
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
