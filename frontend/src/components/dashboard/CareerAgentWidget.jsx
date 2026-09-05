@@ -1,5 +1,7 @@
 import React from "react";
 import { Bot, ArrowRight, Zap, Shield, Activity } from "lucide-react";
+import MotionButton from "../motion/MotionButton";
+import AnimatedNumber from "../motion/AnimatedNumber";
 
 const CareerAgentWidget = ({ osSnapshot, monitorData, onNavigate }) => {
   const agentStatus = osSnapshot?.agentState?.status || "ACTIVE";
@@ -20,7 +22,7 @@ const CareerAgentWidget = ({ osSnapshot, monitorData, onNavigate }) => {
             <h3 className="db-card-title">AI Career Agent</h3>
             <div className="db-agent-status-badges">
               <span className={`status-pill ${agentStatus.toLowerCase()}`}>
-                <Activity size={10} />
+                <Activity size={10} className="db-pulse-icon" />
                 {agentStatus}
               </span>
               <span className="mode-pill">
@@ -46,7 +48,7 @@ const CareerAgentWidget = ({ osSnapshot, monitorData, onNavigate }) => {
 
         <div className="db-agent-metrics-row">
           <div className="db-agent-stat">
-            <span className="stat-value">{pendingActions}</span>
+            <AnimatedNumber value={pendingActions} className="stat-value" />
             <span className="stat-label">Pending Actions</span>
           </div>
 
@@ -62,15 +64,14 @@ const CareerAgentWidget = ({ osSnapshot, monitorData, onNavigate }) => {
         </div>
       </div>
 
-      <button
-        type="button"
+      <MotionButton
         className="db-agent-full-cta"
         onClick={() => onNavigate("/dashboard/agent")}
       >
         <Zap size={14} />
         <span>Open AI Agent Control Center</span>
         <ArrowRight size={14} />
-      </button>
+      </MotionButton>
     </section>
   );
 };

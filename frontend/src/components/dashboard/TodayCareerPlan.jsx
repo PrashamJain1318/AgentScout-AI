@@ -1,5 +1,7 @@
 import React from "react";
-import { CheckSquare, Clock, ArrowRight, Sparkles } from "lucide-react";
+import { CheckSquare, Clock, ArrowRight } from "lucide-react";
+import AnimatedProgress from "../motion/AnimatedProgress";
+import MotionCard from "../motion/MotionCard";
 
 const TodayCareerPlan = ({ plannerData, onNavigate }) => {
   const actionsList = Array.isArray(plannerData?.todayPlan?.actions)
@@ -67,18 +69,16 @@ const TodayCareerPlan = ({ plannerData, onNavigate }) => {
       </div>
 
       <div className="db-plan-progress-track">
-        <div
-          className="db-plan-progress-fill"
-          style={{ width: `${progressPercent}%` }}
-        />
+        <AnimatedProgress value={progressPercent} height={6} />
       </div>
 
       <ul className="db-plan-list">
         {actionsList.map((item) => (
-          <li
+          <MotionCard
             key={item.id || item.title}
             className={`db-plan-item ${item.completed ? "is-completed" : ""}`}
             onClick={() => onNavigate("/dashboard/career-planner")}
+            hoverElevation={-1}
           >
             <div className="db-plan-checkbox">
               {item.completed ? (
@@ -100,7 +100,7 @@ const TodayCareerPlan = ({ plannerData, onNavigate }) => {
                 </span>
               </div>
             </div>
-          </li>
+          </MotionCard>
         ))}
       </ul>
     </section>

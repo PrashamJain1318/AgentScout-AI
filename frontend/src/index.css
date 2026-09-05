@@ -10623,6 +10623,109 @@ a {
   }
 }
 
+/* ==================================================
+   20. PHASE 18.3 — MOTION & TOAST NOTIFICATION SYSTEM
+   ================================================== */
+
+.motion-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 380px;
+  width: calc(100vw - 48px);
+}
+
+.motion-toast-item {
+  pointer-events: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  overflow: hidden;
+}
+
+.motion-toast-item.type-success {
+  border-left: 4px solid var(--success);
+}
+.motion-toast-item.type-success .motion-toast-icon {
+  color: var(--success);
+}
+
+.motion-toast-item.type-error {
+  border-left: 4px solid var(--danger);
+}
+.motion-toast-item.type-error .motion-toast-icon {
+  color: var(--danger);
+}
+
+.motion-toast-item.type-warning {
+  border-left: 4px solid var(--warning);
+}
+.motion-toast-item.type-warning .motion-toast-icon {
+  color: var(--warning);
+}
+
+.motion-toast-item.type-info {
+  border-left: 4px solid var(--primary);
+}
+.motion-toast-item.type-info .motion-toast-icon {
+  color: var(--primary);
+}
+
+.motion-toast-body {
+  flex: 1;
+}
+
+.motion-toast-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.motion-toast-msg {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.motion-toast-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.motion-toast-close:hover {
+  color: var(--text);
+  background: var(--surface-muted);
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
 
 
 

@@ -1,5 +1,7 @@
 import React from "react";
 import { Search, FileText, Send, Mic, Bot } from "lucide-react";
+import MotionButton from "../motion/MotionButton";
+import StaggerContainer, { StaggerItem } from "../motion/StaggerContainer";
 
 const QUICK_ACTIONS = [
   {
@@ -42,24 +44,24 @@ const QUICK_ACTIONS = [
 const QuickActions = ({ onNavigate }) => {
   return (
     <section className="db-quick-actions-bar" aria-label="Quick Navigation Actions">
-      <div className="db-quick-actions-grid">
+      <StaggerContainer className="db-quick-actions-grid" staggerDelay={0.04}>
         {QUICK_ACTIONS.map((action) => {
           const Icon = action.icon;
           return (
-            <button
-              key={action.id}
-              type="button"
-              className={`db-quick-action-btn accent-${action.accent}`}
-              onClick={() => onNavigate(action.route)}
-            >
-              <div className="db-quick-action-icon">
-                <Icon size={16} />
-              </div>
-              <span className="db-quick-action-label">{action.label}</span>
-            </button>
+            <StaggerItem key={action.id}>
+              <MotionButton
+                className={`db-quick-action-btn accent-${action.accent}`}
+                onClick={() => onNavigate(action.route)}
+              >
+                <div className="db-quick-action-icon">
+                  <Icon size={16} />
+                </div>
+                <span className="db-quick-action-label">{action.label}</span>
+              </MotionButton>
+            </StaggerItem>
           );
         })}
-      </div>
+      </StaggerContainer>
     </section>
   );
 };

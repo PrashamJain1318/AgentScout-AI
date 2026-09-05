@@ -1,5 +1,6 @@
 import React from "react";
 import { Sparkles, Calendar, Activity } from "lucide-react";
+import FadeIn from "../motion/FadeIn";
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -21,32 +22,34 @@ const DashboardWelcome = ({ user, osSnapshot }) => {
   const isAgentActive = osSnapshot?.agentState?.status !== "DISABLED";
 
   return (
-    <header className="db-welcome-card">
-      <div className="db-welcome-left">
-        <div className="db-welcome-badge-row">
-          <span className="db-welcome-date">
-            <Calendar size={13} />
-            {currentDate}
-          </span>
-          <span className={`db-ai-status-pill ${isAgentActive ? "active" : "idle"}`}>
-            <Activity size={12} className="db-pulse-icon" />
-            {isAgentActive ? "AI Career Intelligence Active" : "AI Agent Idle"}
-          </span>
+    <FadeIn direction="down" distance={8}>
+      <header className="db-welcome-card">
+        <div className="db-welcome-left">
+          <div className="db-welcome-badge-row">
+            <span className="db-welcome-date">
+              <Calendar size={13} />
+              {currentDate}
+            </span>
+            <span className={`db-ai-status-pill ${isAgentActive ? "active" : "idle"}`}>
+              <Activity size={12} className="db-pulse-icon" />
+              {isAgentActive ? "AI Career Intelligence Active" : "AI Agent Idle"}
+            </span>
+          </div>
+
+          <h1 className="db-welcome-heading">
+            {greeting}, {firstName} 👋
+          </h1>
+
+          <p className="db-welcome-subheading">
+            Your career trajectory for <strong>{targetRole}</strong> is moving forward. Here is your personalized intelligence briefing.
+          </p>
         </div>
 
-        <h1 className="db-welcome-heading">
-          {greeting}, {firstName} 👋
-        </h1>
-
-        <p className="db-welcome-subheading">
-          Your career trajectory for <strong>{targetRole}</strong> is moving forward. Here is your personalized intelligence briefing.
-        </p>
-      </div>
-
-      <div className="db-welcome-sparkle-decoration">
-        <Sparkles size={24} className="db-sparkle-icon" />
-      </div>
-    </header>
+        <div className="db-welcome-sparkle-decoration">
+          <Sparkles size={24} className="db-sparkle-icon" />
+        </div>
+      </header>
+    </FadeIn>
   );
 };
 

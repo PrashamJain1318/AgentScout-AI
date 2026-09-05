@@ -40,6 +40,8 @@ const CareerAgent = lazy(() => import("./pages/CareerAgent"));
 const ApplicationAgent = lazy(() => import("./pages/ApplicationAgent"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 
+import { ToastProvider } from "./components/motion/ToastProvider";
+
 const PageSuspenseFallback = () => (
   <div className="skeleton-details-body" style={{ minHeight: "360px", margin: "24px" }} />
 );
@@ -50,7 +52,8 @@ function App() {
       <ThemeProvider>
         <BrowserRouter>
           <AuthProvider>
-            <Suspense fallback={<PageSuspenseFallback />}>
+            <ToastProvider>
+              <Suspense fallback={<PageSuspenseFallback />}>
               <Routes>
 
               {/* Public */}
@@ -291,8 +294,9 @@ function App() {
 
             </Routes>
           </Suspense>
-        </AuthProvider>
-      </BrowserRouter>
+            </ToastProvider>
+          </AuthProvider>
+        </BrowserRouter>
     </ThemeProvider>
   </GlobalErrorBoundary>
   );

@@ -1,5 +1,7 @@
 import React from "react";
 import { Target, Clock, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
+import MotionCard from "../motion/MotionCard";
+import MotionButton from "../motion/MotionButton";
 
 const NextBestAction = ({ osSnapshot, plannerData, onNavigate }) => {
   const rawAction =
@@ -18,7 +20,7 @@ const NextBestAction = ({ osSnapshot, plannerData, onNavigate }) => {
   const targetRoute = rawAction?.actionUrl || rawAction?.route || "/dashboard/resume";
 
   return (
-    <section className="db-next-action-card">
+    <MotionCard className="db-next-action-card" hoverElevation={-3}>
       <div className="db-next-action-header">
         <div className="db-next-action-title-box">
           <div className="db-next-action-icon">
@@ -58,16 +60,15 @@ const NextBestAction = ({ osSnapshot, plannerData, onNavigate }) => {
           </div>
         </div>
 
-        <button
-          type="button"
+        <MotionButton
           className="db-next-action-btn"
           onClick={() => onNavigate(targetRoute)}
         >
           <span>Take Action Now</span>
           <ArrowRight size={16} />
-        </button>
+        </MotionButton>
       </div>
-    </section>
+    </MotionCard>
   );
 };
 

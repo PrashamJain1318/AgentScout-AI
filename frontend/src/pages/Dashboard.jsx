@@ -1,7 +1,8 @@
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+import PageTransition from "../components/motion/PageTransition";
 import DashboardWelcome from "../components/dashboard/DashboardWelcome";
 import QuickActions from "../components/dashboard/QuickActions";
 import CareerReadinessHero from "../components/dashboard/CareerReadinessHero";
@@ -12,7 +13,6 @@ import TodayCareerPlan from "../components/dashboard/TodayCareerPlan";
 import CareerAgentWidget from "../components/dashboard/CareerAgentWidget";
 import SmartActivityFeed from "../components/dashboard/SmartActivityFeed";
 import DashboardSkeleton from "../components/dashboard/DashboardSkeleton";
-import DashboardErrorState from "../components/dashboard/DashboardErrorState";
 
 import { getRecommendedOpportunities } from "../services/opportunities.api";
 import { getApplications } from "../services/applications.api";
@@ -143,7 +143,7 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="dashboard-clean-container page-fade-in">
+    <PageTransition className="dashboard-clean-container">
       {/* 1. PERSONALIZED WELCOME HEADER */}
       <DashboardWelcome user={user} osSnapshot={osSnapshot} />
 
@@ -193,7 +193,7 @@ const Dashboard = () => {
         loading={actLoading}
         onNavigate={navigate}
       />
-    </div>
+    </PageTransition>
   );
 };
 
