@@ -8,7 +8,12 @@ const ApplicationAgentMemorySchema = new mongoose.Schema(
       required: true,
       index: true
     },
-    category: {
+    agent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ApplicationAgent',
+      default: null
+    },
+    type: {
       type: String,
       enum: [
         'PREFERENCE',
@@ -38,7 +43,7 @@ const ApplicationAgentMemorySchema = new mongoose.Schema(
       type: String,
       default: 'SYSTEM_OBSERVATION'
     },
-    lastAccessedAt: {
+    lastUsedAt: {
       type: Date,
       default: Date.now
     }
@@ -49,6 +54,6 @@ const ApplicationAgentMemorySchema = new mongoose.Schema(
 );
 
 ApplicationAgentMemorySchema.index({ user: 1 });
-ApplicationAgentMemorySchema.index({ user: 1, category: 1 });
+ApplicationAgentMemorySchema.index({ user: 1, type: 1 });
 
 module.exports = mongoose.model('ApplicationAgentMemory', ApplicationAgentMemorySchema);

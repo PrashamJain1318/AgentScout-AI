@@ -11,21 +11,28 @@ const ApplicationAgentTaskSchema = new mongoose.Schema(
     agent: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ApplicationAgent',
-      required: true
+      required: true,
+      index: true
     },
     opportunity: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Opportunity',
+      default: null,
+      index: true
+    },
+    application: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Application',
       default: null
     },
-    taskType: {
+    type: {
       type: String,
       enum: [
         'ANALYZE_OPPORTUNITY',
         'CALCULATE_READINESS',
         'OPTIMIZE_RESUME',
         'GENERATE_COVER_LETTER',
-        'GENERATE_ANSWERS',
+        'GENERATE_APPLICATION_ANSWERS',
         'VALIDATE_APPLICATION',
         'REQUEST_APPROVAL',
         'EXECUTE_APPLICATION',
@@ -41,28 +48,32 @@ const ApplicationAgentTaskSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    priority: {
+      type: String,
+      enum: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
+      default: 'MEDIUM'
+    },
     status: {
       type: String,
       enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'SKIPPED'],
       default: 'PENDING'
     },
-    priority: {
-      type: String,
-      enum: ['HIGH', 'MEDIUM', 'LOW'],
-      default: 'MEDIUM'
-    },
     riskLevel: {
       type: String,
-      enum: ['SAFE_INTERNAL_ACTION', 'HIGH_IMPACT', 'EXTERNAL_ACTION'],
-      default: 'SAFE_INTERNAL_ACTION'
+      enum: ['SAFE', 'HIGH_IMPACT', 'EXTERNAL_ACTION'],
+      default: 'SAFE'
     },
-    payload: {
+    requiresApproval: {
+      type: Boolean,
+      default: false
+    },
+    metadata: {
       type: Object,
       default: {}
     },
-    result: {
-      type: Object,
-      default: {}
+    startedAt: {
+      type: Date,
+      default: null
     },
     completedAt: {
       type: Date,
@@ -76,5 +87,6 @@ const ApplicationAgentTaskSchema = new mongoose.Schema(
 
 ApplicationAgentTaskSchema.index({ user: 1, status: 1 });
 ApplicationAgentTaskSchema.index({ user: 1, opportunity: 1 });
+ApplicationAgentTaskSchema.index({ agent: 1, status: 1 });
 
 module.exports = mongoose.model('ApplicationAgentTask', ApplicationAgentTaskSchema);

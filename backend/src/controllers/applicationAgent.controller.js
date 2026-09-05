@@ -2,18 +2,13 @@ const applicationAgentService = require('../services/applicationAgent.service');
 const { buildApplicationAgentContext } = require('../services/applicationAgentContext.service');
 const { evaluateApplicationDecision } = require('../services/applicationAgentDecision.service');
 
-/**
- * Controller for Application Agent Endpoints
- * All handlers strictly extract userId from req.user.id.
- */
-
 // GET /api/application-agent
 const getAgentState = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const agent = await applicationAgentService.getOrCreateAgent(userId);
     const context = await buildApplicationAgentContext(userId, agent.currentOpportunity);
-    const decision = evaluateApplicationDecision(context);
+    const decision = evaluateApplicationDecision(context, agent.preferences?.minimumMatchScore || 75);
 
     res.json({
       success: true,
@@ -28,11 +23,11 @@ const getAgentState = async (req, res, next) => {
   }
 };
 
-// POST /api/application-agent/analyze
+// POST /api/application-agent/analyze/:opportunityId?
 const analyzeOpportunity = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { opportunityId } = req.body;
+    const opportunityId = req.params.opportunityId || req.body.opportunityId;
     const result = await applicationAgentService.analyzeOpportunity(userId, opportunityId);
 
     res.json({
@@ -49,7 +44,7 @@ const analyzeOpportunity = async (req, res, next) => {
 const getContext = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { opportunityId } = req.params;
+    const opportunityId = req.params.opportunityId || req.query.opportunityId;
     const context = await buildApplicationAgentContext(userId, opportunityId);
 
     res.json({
@@ -61,13 +56,15 @@ const getContext = async (req, res, next) => {
   }
 };
 
-// GET /api/application-agent/next-action
+// GET /api/application-agent/next-action/:opportunityId?
 const getNextAction = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const opportunityId = req.params.opportunityId || req.query.opportunityId;
     const agent = await applicationAgentService.getOrCreateAgent(userId);
-    const context = await buildApplicationAgentContext(userId, agent.currentOpportunity);
-    const decision = evaluateApplicationDecision(context);
+    const targetOppId = opportunityId || agent.currentOpportunity;
+    const context = await buildApplicationAgentContext(userId, targetOppId);
+    const decision = evaluateApplicationDecision(context, agent.preferences?.minimumMatchScore || 75);
 
     res.json({
       success: true,
@@ -78,16 +75,16 @@ const getNextAction = async (req, res, next) => {
   }
 };
 
-// POST /api/application-agent/run
+// POST /api/application-agent/run/:opportunityId?
 const runAgent = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { opportunityId } = req.body;
+    const opportunityId = req.params.opportunityId || req.body.opportunityId;
     const result = await applicationAgentService.runApplicationAgent(userId, opportunityId);
 
     res.json({
       success: true,
-      message: 'Application Agent executed successfully',
+      message: 'Application Agent reasoning cycle executed',
       data: result
     });
   } catch (error) {
@@ -132,7 +129,8 @@ const disableAgent = async (req, res, next) => {
 const getTasks = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const tasks = await applicationAgentService.getAgentTasks(userId);
+    const { status, opportunityId } = req.query;
+    const tasks = await applicationAgentService.getAgentTasks(userId, { status, opportunityId });
 
     res.json({
       success: true,

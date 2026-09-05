@@ -11,7 +11,8 @@ const ApplicationDraftSchema = new mongoose.Schema(
     opportunity: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Opportunity',
-      required: true
+      required: true,
+      index: true
     },
     application: {
       type: mongoose.Schema.Types.ObjectId,
@@ -37,21 +38,20 @@ const ApplicationDraftSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['DRAFT', 'APPROVED', 'REJECTED'],
+      enum: ['DRAFT', 'READY_FOR_REVIEW', 'APPROVED', 'REJECTED', 'ARCHIVED'],
       default: 'DRAFT'
     },
     generatedBy: {
       type: String,
-      enum: ['AI', 'USER'],
       default: 'AI'
     },
     approvedByUser: {
       type: Boolean,
       default: false
     },
-    userNotes: {
-      type: String,
-      default: ''
+    metadata: {
+      type: Object,
+      default: {}
     }
   },
   {

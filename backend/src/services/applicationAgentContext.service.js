@@ -9,16 +9,24 @@ const CareerActionPlan = require('../models/CareerActionPlan.model');
 const OpportunityMonitor = require('../models/OpportunityMonitor.model');
 const CareerAgent = require('../models/CareerAgent.model');
 const ApplicationAgentMemory = require('../models/ApplicationAgentMemory.model');
+const mongoose = require('mongoose');
 
 /**
  * Application Agent Context Engine
- * Collects candidate profile, resume ATS, target opportunity, AI matches,
- * application history, interview readiness, and learned preferences into a single
- * context object for decision making.
+ * Collects normalized candidate, resume, opportunity, match, application, and assistant
+ * intelligence into a safe, non-crashing context object strictly scoped to the authenticated user.
  */
 const buildApplicationAgentContext = async (userId, opportunityId = null) => {
   if (!userId) {
     throw new Error('UserId is required to build application agent context.');
+  }
+
+  // Validate MongoDB ID format safely if provided
+  let validOppId = null;
+  if (opportunityId) {
+    if (mongoose.Types.ObjectId.isValid(opportunityId)) {
+      validOppId = opportunityId;
+    }
   }
 
   const [
@@ -28,8 +36,6 @@ const buildApplicationAgentContext = async (userId, opportunityId = null) => {
     applications,
     appAssistantRecords,
     interviewSessions,
-    careerPlan,
-    opportunityMonitor,
     careerAgent,
     agentMemories
   ] = await Promise.all([
@@ -39,8 +45,6 @@ const buildApplicationAgentContext = async (userId, opportunityId = null) => {
     Application.find({ user: userId }).populate('opportunity').lean(),
     ApplicationAssistant.find({ user: userId }).lean(),
     InterviewSession.find({ user: userId }).sort({ createdAt: -1 }).limit(5).lean(),
-    CareerActionPlan.findOne({ user: userId }).lean(),
-    OpportunityMonitor.findOne({ user: userId }).lean(),
     CareerAgent.findOne({ user: userId }).lean(),
     ApplicationAgentMemory.find({ user: userId }).lean()
   ]);
@@ -49,20 +53,20 @@ const buildApplicationAgentContext = async (userId, opportunityId = null) => {
     throw new Error('User not found.');
   }
 
-  // Load target opportunity if provided or pick top available match
+  // Determine target opportunity safely
   let targetOpportunity = null;
   let targetMatch = null;
 
-  if (opportunityId) {
-    targetOpportunity = await Opportunity.findById(opportunityId).lean();
-    targetMatch = matches.find(m => String(m.opportunity?._id || m.opportunity) === String(opportunityId)) || null;
+  if (validOppId) {
+    targetOpportunity = await Opportunity.findById(validOppId).lean();
+    targetMatch = matches.find(m => String(m.opportunity?._id || m.opportunity) === String(validOppId)) || null;
   } else if (matches.length > 0) {
-    const sortedMatches = [...matches].sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+    const sortedMatches = [...matches].sort((a, b) => (b.matchScore || b.score || 0) - (a.matchScore || a.score || 0));
     targetMatch = sortedMatches[0];
     targetOpportunity = targetMatch.opportunity || null;
   }
 
-  // Normalize candidate profile
+  // Candidate Profile Normalization
   const profile = user.profile || {};
   const skills = Array.isArray(resume?.skills) && resume.skills.length > 0
     ? resume.skills
@@ -70,45 +74,48 @@ const buildApplicationAgentContext = async (userId, opportunityId = null) => {
     ? profile.skills
     : [];
 
-  const atsScore = resume?.atsScore || resume?.score || 0;
-  const matchScore = targetMatch?.matchScore || targetMatch?.score || 0;
+  const atsScore = Number(resume?.atsScore || resume?.score || 0);
+  const matchScore = Number(targetMatch?.matchScore || targetMatch?.score || 0);
 
-  // Calculate Readiness Sub-metrics
-  const resumeReadiness = atsScore;
-  const skillsReadiness = skills.length > 0 ? Math.min(100, skills.length * 12) : 40;
-  const experienceReadiness = Array.isArray(profile.experience) && profile.experience.length > 0
-    ? Math.min(100, profile.experience.length * 30 + 40)
-    : 50;
-
-  const completedInterviews = interviewSessions.filter(s => s.status === 'COMPLETED');
-  const interviewReadinessScore = completedInterviews.length > 0
-    ? Math.round(completedInterviews.reduce((acc, s) => acc + (s.overallScore || 70), 0) / completedInterviews.length)
-    : 65;
-
-  const overallReadiness = Math.round(
-    (resumeReadiness * 0.3) +
-    (matchScore * 0.3) +
-    (skillsReadiness * 0.2) +
-    (experienceReadiness * 0.1) +
-    (interviewReadinessScore * 0.1)
-  );
-
-  // Application History & Duplicate Check
+  // Check if candidate already applied to target opportunity
   const existingApp = targetOpportunity
     ? applications.find(a => String(a.opportunity?._id || a.opportunity) === String(targetOpportunity._id))
     : null;
 
+  // Interview Readiness Score
+  const completedInterviews = interviewSessions.filter(s => s.status === 'COMPLETED');
+  const interviewReadinessScore = completedInterviews.length > 0
+    ? Math.round(completedInterviews.reduce((acc, s) => acc + (s.overallScore || s.score || 70), 0) / completedInterviews.length)
+    : 70;
+
+  // Application Assistant Metrics
+  const latestAppAssistant = appAssistantRecords[0] || null;
+  const assistantReadinessScore = latestAppAssistant?.readinessScore || Math.round((atsScore * 0.5) + (matchScore * 0.5));
+
+  // Compute Readiness Breakdown Metrics (strictly 0-100)
+  const resumeReadiness = Math.min(100, Math.max(0, atsScore));
+  const skillsReadiness = Math.min(100, Math.max(0, skills.length * 12));
+  const experienceReadiness = Math.min(100, Math.max(0, (profile.experience?.length || 1) * 25 + 30));
+  const projectsReadiness = Math.min(100, Math.max(0, (profile.projects?.length || 1) * 30 + 20));
+  const interviewReadiness = Math.min(100, Math.max(0, interviewReadinessScore));
+
+  const overallReadiness = Math.min(100, Math.max(0, Math.round(
+    (resumeReadiness * 0.25) +
+    (matchScore * 0.25) +
+    (skillsReadiness * 0.2) +
+    (experienceReadiness * 0.15) +
+    (interviewReadiness * 0.15)
+  )));
+
   return {
-    userId,
+    userId: String(userId),
     candidate: {
       id: user._id,
       name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Candidate',
       email: user.email,
-      headline: profile.headline || '',
-      location: profile.location || '',
+      profile,
       skills,
       experience: profile.experience || [],
-      education: profile.education || [],
       projects: profile.projects || [],
       preferences: profile.preferences || {}
     },
@@ -120,11 +127,9 @@ const buildApplicationAgentContext = async (userId, opportunityId = null) => {
     },
     opportunity: targetOpportunity
       ? {
-          id: targetOpportunity._id,
-          title: targetOpportunity.title,
-          company: targetOpportunity.company,
-          location: targetOpportunity.location,
-          type: targetOpportunity.type || 'Full-time',
+          id: String(targetOpportunity._id),
+          title: targetOpportunity.title || 'Role Title',
+          company: targetOpportunity.company || 'Company Name',
           description: targetOpportunity.description || '',
           requirements: targetOpportunity.requirements || [],
           skills: targetOpportunity.skills || [],
@@ -132,41 +137,48 @@ const buildApplicationAgentContext = async (userId, opportunityId = null) => {
         }
       : null,
     match: {
+      exists: Boolean(targetMatch),
       score: matchScore,
       strengths: targetMatch?.strengths || [],
       gaps: targetMatch?.missingSkills || []
     },
-    applicationHistory: applications.map(a => ({
-      id: a._id,
-      opportunityId: a.opportunity?._id || a.opportunity,
-      company: a.opportunity?.company || 'Company',
-      title: a.opportunity?.title || 'Role',
-      status: a.status,
-      appliedAt: a.createdAt
-    })),
-    duplicateDetected: Boolean(existingApp),
-    existingApplicationStatus: existingApp?.status || null,
-    interview: {
-      readinessScore: interviewReadinessScore
+    applications: {
+      alreadyApplied: Boolean(existingApp),
+      existingStatus: existingApp?.status || null,
+      applicationCount: applications.length,
+      relevantHistory: applications.map(a => ({
+        id: a._id,
+        opportunityId: a.opportunity?._id || a.opportunity,
+        company: a.opportunity?.company || 'Company',
+        title: a.opportunity?.title || 'Role',
+        status: a.status,
+        appliedAt: a.createdAt
+      }))
     },
-    careerAgent: careerAgent
-      ? {
-          status: careerAgent.status,
-          mode: careerAgent.mode
-        }
-      : null,
+    applicationAssistant: {
+      readinessScore: assistantReadinessScore,
+      strengths: targetMatch?.strengths || [],
+      gaps: targetMatch?.missingSkills || []
+    },
+    interview: {
+      readinessScore: interviewReadiness
+    },
+    careerAgent: {
+      status: careerAgent?.status || 'IDLE',
+      nextAction: careerAgent?.agentState?.currentAction || 'IMPROVE_RESUME'
+    },
     readinessMetrics: {
       overall: overallReadiness,
       resume: resumeReadiness,
       skills: skillsReadiness,
       experience: experienceReadiness,
-      projects: profile.projects?.length ? 85 : 50,
+      projects: projectsReadiness,
       ats: atsScore,
-      interview: interviewReadinessScore
+      interview: interviewReadiness
     },
     memories: agentMemories.map(m => ({
-      id: m._id,
-      category: m.category,
+      id: String(m._id),
+      type: m.type,
       key: m.key,
       value: m.value,
       confidence: m.confidence

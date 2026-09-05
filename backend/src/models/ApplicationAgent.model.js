@@ -52,23 +52,23 @@ const ApplicationAgentSchema = new mongoose.Schema(
       ats: { type: Number, default: 0, min: 0, max: 100 },
       interview: { type: Number, default: 0, min: 0, max: 100 }
     },
+    preferences: {
+      minimumMatchScore: { type: Number, default: 75, min: 0, max: 100 },
+      autoPrepareSafeActions: { type: Boolean, default: true },
+      preferredTone: { type: String, default: 'PROFESSIONAL' },
+      preferredResumeStyle: { type: String, default: 'MODERN_ATS' }
+    },
     statistics: {
       applicationsAnalyzed: { type: Number, default: 0 },
       applicationsPrepared: { type: Number, default: 0 },
       applicationsCompleted: { type: Number, default: 0 },
       duplicatesPrevented: { type: Number, default: 0 }
     },
-    preferences: {
-      autoPrepareHighMatch: { type: Boolean, default: true },
-      minMatchThreshold: { type: Number, default: 75 },
-      conciseCoverLetter: { type: Boolean, default: true },
-      notificationOnReviewReady: { type: Boolean, default: true }
-    },
-    lastAnalyzedAt: {
+    lastRunAt: {
       type: Date,
       default: null
     },
-    lastPreparedAt: {
+    lastActionAt: {
       type: Date,
       default: null
     }
@@ -77,5 +77,7 @@ const ApplicationAgentSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+ApplicationAgentSchema.index({ user: 1, status: 1 });
 
 module.exports = mongoose.model('ApplicationAgent', ApplicationAgentSchema);

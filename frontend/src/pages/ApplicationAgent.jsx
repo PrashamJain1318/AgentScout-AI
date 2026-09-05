@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
-  getApplicationAgentState,
+  getApplicationAgent,
   analyzeOpportunity,
   runApplicationAgent,
   enableApplicationAgent,
   disableApplicationAgent,
-  getApplicationAgentTasks,
-  getApplicationAgentMemory,
-  deleteApplicationAgentMemory
+  getApplicationTasks,
+  getApplicationMemory,
+  deleteApplicationMemory
 } from '../services/applicationAgent.api';
 
 import ApplicationAgentHeader from '../components/application-agent/ApplicationAgentHeader';
@@ -21,6 +22,9 @@ import ApplicationAgentActivity from '../components/application-agent/Applicatio
 import ApplicationAgentSkeleton from '../components/application-agent/ApplicationAgentSkeleton';
 
 const ApplicationAgent = () => {
+  const [searchParams] = useSearchParams();
+  const targetOppFromUrl = searchParams.get('opportunity');
+
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState(null);
@@ -31,13 +35,13 @@ const ApplicationAgent = () => {
   const [tasks, setTasks] = useState([]);
   const [memories, setMemories] = useState([]);
 
-  const fetchData = useCallback(async () => {
+  const loadData = useCallback(async (signal) => {
     try {
       setError(null);
       const [stateData, taskData, memoryData] = await Promise.all([
-        getApplicationAgentState(),
-        getApplicationAgentTasks(),
-        getApplicationAgentMemory()
+        getApplicationAgent({ signal }),
+        getApplicationTasks({ signal }),
+        getApplicationMemory({ signal })
       ]);
 
       setAgent(stateData.agent);
@@ -45,24 +49,39 @@ const ApplicationAgent = () => {
       setDecision(stateData.decision);
       setTasks(taskData || []);
       setMemories(memoryData || []);
+
+      // If opportunity query parameter present in URL, auto-analyze
+      if (targetOppFromUrl && String(stateData.context?.opportunity?.id) !== String(targetOppFromUrl)) {
+        const analyzed = await analyzeOpportunity(targetOppFromUrl);
+        setAgent(analyzed.agent);
+        setContext(analyzed.context);
+        setDecision(analyzed.decision);
+      }
     } catch (err) {
-      console.error('Failed to load Application Agent state:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to connect to Application Agent');
+      if (err.name === 'CanceledError' || err.name === 'AbortError') return;
+      console.error('Failed to load Application Agent data:', err);
+      const msg = typeof err.response?.data?.message === 'string'
+        ? err.response.data.message
+        : err.message || 'Failed to connect to Application Agent';
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [targetOppFromUrl]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
+  }, [loadData]);
 
   const handleEnableMode = async (mode) => {
     try {
       const updatedAgent = await enableApplicationAgent(mode);
       setAgent(updatedAgent);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update agent mode');
+      const msg = typeof err.response?.data?.message === 'string' ? err.response.data.message : err.message;
+      alert(msg || 'Failed to update agent mode');
     }
   };
 
@@ -71,7 +90,8 @@ const ApplicationAgent = () => {
       const updatedAgent = await disableApplicationAgent();
       setAgent(updatedAgent);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to pause agent');
+      const msg = typeof err.response?.data?.message === 'string' ? err.response.data.message : err.message;
+      alert(msg || 'Failed to pause agent');
     }
   };
 
@@ -82,10 +102,11 @@ const ApplicationAgent = () => {
       setAgent(result.agent);
       setContext(result.context);
       setDecision(result.decision);
-      const updatedTasks = await getApplicationAgentTasks();
+      const updatedTasks = await getApplicationTasks();
       setTasks(updatedTasks || []);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to analyze opportunity');
+      const msg = typeof err.response?.data?.message === 'string' ? err.response.data.message : err.message;
+      alert(msg || 'Failed to analyze opportunity');
     } finally {
       setRunning(false);
     }
@@ -99,24 +120,29 @@ const ApplicationAgent = () => {
       setContext(result.context);
       setDecision(result.decision);
       const [updatedTasks, updatedMemories] = await Promise.all([
-        getApplicationAgentTasks(),
-        getApplicationAgentMemory()
+        getApplicationTasks(),
+        getApplicationMemory()
       ]);
       setTasks(updatedTasks || []);
       setMemories(updatedMemories || []);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to execute Application Agent action');
+      const msg = typeof err.response?.data?.message === 'string' ? err.response.data.message : err.message;
+      alert(msg || 'Failed to execute Application Agent action');
     } finally {
       setRunning(false);
     }
   };
 
   const handleDeleteMemory = async (memoryId) => {
+    if (!window.confirm('Are you sure you want to delete/forget this candidate memory?')) {
+      return;
+    }
     try {
-      await deleteApplicationAgentMemory(memoryId);
+      await deleteApplicationMemory(memoryId);
       setMemories(prev => prev.filter(m => String(m._id || m.id) !== String(memoryId)));
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete memory');
+      const msg = typeof err.response?.data?.message === 'string' ? err.response.data.message : err.message;
+      alert(msg || 'Failed to delete memory');
     }
   };
 

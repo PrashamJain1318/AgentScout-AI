@@ -1,28 +1,31 @@
 import api from './api';
 
-export const getApplicationAgentState = async () => {
+export const getApplicationAgent = async () => {
   const response = await api.get('/application-agent');
   return response.data.data;
 };
 
 export const analyzeOpportunity = async (opportunityId) => {
-  const response = await api.post('/application-agent/analyze', { opportunityId });
+  const url = opportunityId ? `/application-agent/analyze/${opportunityId}` : '/application-agent/analyze';
+  const response = await api.post(url, { opportunityId });
   return response.data.data;
 };
 
-export const getApplicationAgentContext = async (opportunityId = null) => {
+export const getApplicationContext = async (opportunityId = null) => {
   const url = opportunityId ? `/application-agent/context/${opportunityId}` : '/application-agent/context';
   const response = await api.get(url);
   return response.data.data;
 };
 
-export const getNextAction = async () => {
-  const response = await api.get('/application-agent/next-action');
+export const getNextAction = async (opportunityId = null) => {
+  const url = opportunityId ? `/application-agent/next-action/${opportunityId}` : '/application-agent/next-action';
+  const response = await api.get(url);
   return response.data.data;
 };
 
 export const runApplicationAgent = async (opportunityId = null) => {
-  const response = await api.post('/application-agent/run', { opportunityId });
+  const url = opportunityId ? `/application-agent/run/${opportunityId}` : '/application-agent/run';
+  const response = await api.post(url, { opportunityId });
   return response.data.data;
 };
 
@@ -36,22 +39,22 @@ export const disableApplicationAgent = async () => {
   return response.data.data;
 };
 
-export const getApplicationAgentTasks = async () => {
-  const response = await api.get('/application-agent/tasks');
+export const getApplicationTasks = async (params = {}) => {
+  const response = await api.get('/application-agent/tasks', { params });
   return response.data.data;
 };
 
-export const getApplicationAgentMemory = async () => {
+export const getApplicationMemory = async () => {
   const response = await api.get('/application-agent/memory');
   return response.data.data;
 };
 
-export const deleteApplicationAgentMemory = async (memoryId) => {
+export const deleteApplicationMemory = async (memoryId) => {
   const response = await api.delete(`/application-agent/memory/${memoryId}`);
   return response.data;
 };
 
-export const getApplicationAgentDrafts = async (opportunityId = null) => {
+export const getApplicationDrafts = async (opportunityId = null) => {
   const url = opportunityId ? `/application-agent/drafts?opportunityId=${opportunityId}` : '/application-agent/drafts';
   const response = await api.get(url);
   return response.data.data;
