@@ -20,86 +20,111 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-const navigation = [
+const navigationSections = [
   {
-    label: "Dashboard",
-    path: "/dashboard",
-    icon: LayoutDashboard,
+    title: "MAIN",
+    items: [
+      {
+        label: "Dashboard",
+        path: "/dashboard",
+        icon: LayoutDashboard,
+      },
+    ],
   },
   {
-    label: "AI Career Agent",
-    path: "/dashboard/agent",
-    icon: Bot,
+    title: "AI INTELLIGENCE",
+    items: [
+      {
+        label: "AI Career Agent",
+        path: "/dashboard/agent",
+        icon: Bot,
+      },
+      {
+        label: "Career OS",
+        path: "/dashboard/career-os",
+        icon: Brain,
+      },
+      {
+        label: "Application Agent",
+        path: "/dashboard/application-agent",
+        icon: Bot,
+      },
+      {
+        label: "Opp Monitor",
+        path: "/dashboard/opportunity-monitor",
+        icon: Radio,
+      },
+      {
+        label: "Career Planner",
+        path: "/dashboard/career-planner",
+        icon: Target,
+      },
+    ],
   },
   {
-    label: "Career OS",
-    path: "/dashboard/career-os",
-    icon: Brain,
+    title: "CAREER",
+    items: [
+      {
+        label: "Opportunities",
+        path: "/opportunities",
+        icon: Search,
+      },
+      {
+        label: "Matches",
+        path: "/dashboard/matches",
+        icon: Sparkles,
+      },
+      {
+        label: "Applications",
+        path: "/dashboard/applications",
+        icon: BookmarkCheck,
+      },
+      {
+        label: "App Assistant",
+        path: "/dashboard/application-assistant",
+        icon: CheckSquare,
+      },
+      {
+        label: "Interview Coach",
+        path: "/dashboard/interview-coach",
+        icon: Brain,
+      },
+      {
+        label: "Career Copilot",
+        path: "/dashboard/career-copilot",
+        icon: BriefcaseBusiness,
+      },
+    ],
   },
   {
-    label: "Application Agent",
-    path: "/dashboard/application-agent",
-    icon: Bot,
+    title: "INSIGHTS",
+    items: [
+      {
+        label: "Analytics",
+        path: "/dashboard/analytics",
+        icon: BarChart3,
+      },
+      {
+        label: "Resume",
+        path: "/dashboard/resume",
+        icon: FileText,
+      },
+    ],
   },
   {
-    label: "Opp Monitor",
-    path: "/dashboard/opportunity-monitor",
-    icon: Radio,
-  },
-  {
-    label: "Career Planner",
-    path: "/dashboard/career-planner",
-    icon: Target,
-  },
-  {
-    label: "Opportunities",
-    path: "/opportunities",
-    icon: Search,
-  },
-  {
-    label: "Matches",
-    path: "/dashboard/matches",
-    icon: Sparkles,
-  },
-  {
-    label: "Applications",
-    path: "/dashboard/applications",
-    icon: BookmarkCheck,
-  },
-  {
-    label: "App Assistant",
-    path: "/dashboard/application-assistant",
-    icon: CheckSquare,
-  },
-  {
-    label: "Interview Coach",
-    path: "/dashboard/interview-coach",
-    icon: Brain,
-  },
-  {
-    label: "Career Copilot",
-    path: "/dashboard/career-copilot",
-    icon: BriefcaseBusiness,
-  },
-  {
-    label: "Analytics",
-    path: "/dashboard/analytics",
-    icon: BarChart3,
-  },
-  {
-    label: "Resume",
-    path: "/dashboard/resume",
-    icon: FileText,
-  },
-  {
-    label: "Settings",
-    path: "/dashboard/settings",
-    icon: Settings,
-  },
-  {
-    label: "Profile",
-    path: "/profile",
-    icon: UserRound,
+    title: "ACCOUNT",
+    items: [
+      {
+        label: "Settings",
+        path: "/dashboard/settings",
+        icon: Settings,
+      },
+      {
+        label: "Profile",
+        path: "/profile",
+        icon: UserRound,
+      },
+    ],
   },
 ];
 
@@ -273,11 +298,15 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         aria-label="Main Navigation"
       >
         <div className="brand">
-          <img src="/logo.jpg" alt="AgentScout AI Logo" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain', background: '#ffffff', padding: '2px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
+          <img
+            src="/logo.jpg"
+            alt="AgentScout AI Logo"
+            className="brand-logo-img"
+          />
 
-          <div>
-            <h1>AgentScout-AI</h1>
-            <span>YOUR AI CAREER PARTNER</span>
+          <div className="brand-text">
+            <h1 className="brand-title">AgentScout-AI</h1>
+            <span className="brand-subtitle">YOUR AI CAREER PARTNER</span>
           </div>
 
           {onCloseMobile && (
@@ -293,20 +322,27 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         </div>
 
         <nav className="sidebar-nav">
-          {navigation.map(({ label, path, icon: Icon }) => {
-            const active = isItemActive(path);
+          {navigationSections.map((section) => (
+            <div key={section.title} className="sidebar-section">
+              <div className="sidebar-section-header">{section.title}</div>
+              <div className="sidebar-section-items">
+                {section.items.map(({ label, path, icon: Icon }) => {
+                  const active = isItemActive(path);
 
-            return (
-              <NavLink
-                key={path}
-                to={path}
-                className={`nav-item ${active ? "active" : ""}`}
-              >
-                <Icon size={19} />
-                <span>{label}</span>
-              </NavLink>
-            );
-          })}
+                  return (
+                    <NavLink
+                      key={path}
+                      to={path}
+                      className={`nav-item ${active ? "active" : ""}`}
+                    >
+                      <Icon size={18} className="nav-icon" />
+                      <span>{label}</span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="sidebar-footer">
@@ -316,7 +352,7 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
             className="nav-item logout-btn"
             aria-label="Sign out of AgentScout"
           >
-            <LogOut size={19} />
+            <LogOut size={18} />
             <span>Sign Out</span>
           </button>
         </div>

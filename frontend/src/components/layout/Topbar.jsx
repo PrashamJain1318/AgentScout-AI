@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, Search, Sparkles } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "../notifications/NotificationBell";
 import ThemeToggle from "./ThemeToggle";
@@ -16,8 +16,12 @@ const pageTitles = {
   "/profile": "Candidate Profile",
   "/opportunities": "Opportunities Explorer",
   "/ai-search": "AI Job Matches",
+  "/dashboard/matches": "AI Job Matches",
+  "/matches": "AI Job Matches",
   "/applications": "Applications Tracker",
+  "/dashboard/applications": "Applications Tracker",
   "/career-copilot": "Career Copilot",
+  "/dashboard/career-copilot": "Career Copilot",
   "/dashboard/notifications": "Notifications & Activity Center",
   "/notifications": "Notifications & Activity Center",
   "/dashboard/analytics": "Career Analytics",
@@ -48,6 +52,10 @@ const Topbar = ({ onToggleMobile, isMobileOpen }) => {
     user?.name ||
     "Candidate";
 
+  const handleSearchClick = () => {
+    navigate("/opportunities");
+  };
+
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -58,10 +66,27 @@ const Topbar = ({ onToggleMobile, isMobileOpen }) => {
           aria-label={isMobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={isMobileOpen}
         >
-          <Menu size={22} />
+          <Menu size={20} />
         </button>
 
-        <h1 className="topbar-title">{title}</h1>
+        <div className="topbar-title-wrapper">
+          <span className="topbar-breadcrumb">AgentScout AI</span>
+          <span className="topbar-breadcrumb-slash">/</span>
+          <h1 className="topbar-title">{title}</h1>
+        </div>
+      </div>
+
+      <div className="topbar-center">
+        <button
+          type="button"
+          className="topbar-ai-search-btn"
+          onClick={handleSearchClick}
+          title="Search opportunities or AI matches (⌘K)"
+        >
+          <Search size={15} className="search-icon" />
+          <span className="search-placeholder">Search opportunities or ask AI...</span>
+          <kbd className="search-shortcut"><Sparkles size={11} /> ⌘K</kbd>
+        </button>
       </div>
 
       <div className="topbar-actions">
@@ -75,8 +100,11 @@ const Topbar = ({ onToggleMobile, isMobileOpen }) => {
           title="View candidate profile"
           aria-label="View candidate profile"
         >
-          <div className="avatar">
-            {firstName.charAt(0).toUpperCase()}
+          <div className="avatar-wrapper">
+            <div className="avatar">
+              {firstName.charAt(0).toUpperCase()}
+            </div>
+            <span className="online-indicator-dot" />
           </div>
 
           <span className="user-name">{firstName}</span>
@@ -89,7 +117,7 @@ const Topbar = ({ onToggleMobile, isMobileOpen }) => {
           title="Sign out"
           aria-label="Sign out"
         >
-          <LogOut size={18} />
+          <LogOut size={17} />
         </button>
       </div>
     </header>
