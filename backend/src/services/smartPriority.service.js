@@ -1,7 +1,7 @@
 const Resume = require('../models/Resume.model');
 const Application = require('../models/Application.model');
 const Opportunity = require('../models/Opportunity.model');
-const Interview = require('../models/Interview.model');
+const InterviewSession = require('../models/InterviewSession.model');
 
 /**
  * Smart Priority Service - Evaluates candidate state and determines dominant focus & priorities
@@ -42,10 +42,10 @@ const evaluateSmartPriorities = async (userId) => {
     }
 
     try {
-      if (Interview) {
-        upcomingInterview = await Interview.findOne({
+      if (InterviewSession) {
+        upcomingInterview = await InterviewSession.findOne({
           user: userId,
-          status: { $in: ['SCHEDULED', 'IN_PROGRESS', 'PREPARING'] }
+          status: { $in: ['SCHEDULED', 'IN_PROGRESS', 'PREPARING', 'COMPLETED'] }
         }).sort({ createdAt: -1 }).lean();
       }
     } catch (err) {

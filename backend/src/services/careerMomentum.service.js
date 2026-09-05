@@ -1,6 +1,6 @@
 const Application = require('../models/Application.model');
 const Resume = require('../models/Resume.model');
-const Interview = require('../models/Interview.model');
+const InterviewSession = require('../models/InterviewSession.model');
 
 /**
  * Career Momentum Service - Calculates dynamic candidate momentum score (0-100%)
@@ -38,8 +38,8 @@ const calculateMomentumScore = async (userId) => {
     }
 
     try {
-      if (Interview) {
-        interviewCount = await Interview.countDocuments({ user: userId });
+      if (InterviewSession) {
+        interviewCount = await InterviewSession.countDocuments({ user: userId });
       }
     } catch (e) {
       // safe fallback

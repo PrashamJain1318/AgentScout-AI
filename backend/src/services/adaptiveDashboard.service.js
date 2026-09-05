@@ -1,6 +1,6 @@
 const Resume = require('../models/Resume.model');
 const Application = require('../models/Application.model');
-const Interview = require('../models/Interview.model');
+const InterviewSession = require('../models/InterviewSession.model');
 
 /**
  * Adaptive Dashboard Service - Builds dynamic journey roadmap, AI insights, and widget priorities
@@ -25,8 +25,8 @@ const getJourneyRoadmap = async (userId) => {
     } catch (e) {}
 
     try {
-      if (Interview) {
-        interviewCount = await Interview.countDocuments({ user: userId });
+      if (InterviewSession) {
+        interviewCount = await InterviewSession.countDocuments({ user: userId });
       }
     } catch (e) {}
 
