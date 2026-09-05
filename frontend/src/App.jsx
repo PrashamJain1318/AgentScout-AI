@@ -38,6 +38,7 @@ const OpportunityMonitor = lazy(() => import("./pages/OpportunityMonitor"));
 const CareerOS = lazy(() => import("./pages/CareerOS"));
 const CareerAgent = lazy(() => import("./pages/CareerAgent"));
 const ApplicationAgent = lazy(() => import("./pages/ApplicationAgent"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 
 const PageSuspenseFallback = () => (
   <div className="skeleton-details-body" style={{ minHeight: "360px", margin: "24px" }} />
@@ -285,12 +286,7 @@ function App() {
 
               <Route
                 path="/"
-                element={
-                  <Navigate
-                    to="/dashboard"
-                    replace
-                  />
-                }
+                element={<LandingPage />}
               />
 
             </Routes>
