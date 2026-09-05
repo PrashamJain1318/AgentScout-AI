@@ -1,15 +1,22 @@
 import React from "react";
 
-const DashboardSkeleton = ({ height = "120px" }) => {
+const DashboardSkeleton = () => {
   return (
-    <div
-      className="dashboard-skeleton-card"
-      style={{ height }}
-      aria-hidden="true"
-    >
-      <div className="skeleton-pulse-line" style={{ width: "40%", height: "16px" }} />
-      <div className="skeleton-pulse-line" style={{ width: "80%", height: "12px", marginTop: "12px" }} />
-      <div className="skeleton-pulse-line" style={{ width: "60%", height: "12px", marginTop: "8px" }} />
+    <div className="db-skeleton-container" aria-label="Loading Dashboard">
+      <div className="db-skeleton-welcome" />
+      <div className="db-skeleton-quick-actions" />
+      <div className="db-skeleton-hero" />
+      <div className="db-skeleton-next-action" />
+      <div className="db-skeleton-health-grid">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="db-skeleton-health-card" />
+        ))}
+      </div>
+      <div className="db-skeleton-opps-grid">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="db-skeleton-opp-card" />
+        ))}
+      </div>
     </div>
   );
 };
