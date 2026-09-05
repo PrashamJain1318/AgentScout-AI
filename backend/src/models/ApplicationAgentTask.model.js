@@ -5,20 +5,17 @@ const ApplicationAgentTaskSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
-      index: true
+      required: true
     },
     agent: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ApplicationAgent',
-      required: true,
-      index: true
+      required: true
     },
     opportunity: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Opportunity',
-      default: null,
-      index: true
+      default: null
     },
     application: {
       type: mongoose.Schema.Types.ObjectId,

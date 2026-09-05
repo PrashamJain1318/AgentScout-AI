@@ -68,13 +68,15 @@ const buildApplicationAgentContext = async (userId, opportunityId = null) => {
 
   // Candidate Profile Normalization
   const profile = user.profile || {};
-  const skills = Array.isArray(resume?.skills) && resume.skills.length > 0
+  const skills = Array.isArray(resume?.extractedData?.skills) && resume.extractedData.skills.length > 0
+    ? resume.extractedData.skills
+    : Array.isArray(resume?.skills) && resume.skills.length > 0
     ? resume.skills
     : Array.isArray(profile.skills)
     ? profile.skills
     : [];
 
-  const atsScore = Number(resume?.atsScore || resume?.score || 0);
+  const atsScore = Number(resume?.scores?.ats || resume?.atsScore || resume?.score || 0);
   const matchScore = Number(targetMatch?.matchScore || targetMatch?.score || 0);
 
   // Check if candidate already applied to target opportunity
