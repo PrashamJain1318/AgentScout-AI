@@ -8,42 +8,20 @@ const InterviewSession = require('../models/InterviewSession.model');
 
 const calculateMomentumScore = async (userId) => {
   try {
-    let score = 50;
-    let applicationsCount = 0;
-    let recentAppsCount = 0;
-    let resumeScore = 0;
-    let interviewCount = 0;
-
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
-    try {
-      if (Application) {
-        applicationsCount = await Application.countDocuments({ user: userId });
-        recentAppsCount = await Application.countDocuments({
-          user: userId,
-          updatedAt: { $gte: fourteenDaysAgo }
-        });
-      }
-    } catch (e) {
-      // safe fallback
-    }
+    const [appsCountRes, recentAppsRes, resumeRes, interviewRes] = await Promise.allSettled([
+      Application ? Application.countDocuments({ user: userId }) : Promise.resolve(0),
+      Application ? Application.countDocuments({ user: userId, updatedAt: { $gte: fourteenDaysAgo } }) : Promise.resolve(0),
+      Resume ? Resume.findOne({ user: userId }).select('atsScore score').lean() : Promise.resolve(null),
+      InterviewSession ? InterviewSession.countDocuments({ user: userId }) : Promise.resolve(0)
+    ]);
 
-    try {
-      if (Resume) {
-        const resume = await Resume.findOne({ user: userId }).lean();
-        resumeScore = resume?.atsScore ?? resume?.score ?? 0;
-      }
-    } catch (e) {
-      // safe fallback
-    }
-
-    try {
-      if (InterviewSession) {
-        interviewCount = await InterviewSession.countDocuments({ user: userId });
-      }
-    } catch (e) {
-      // safe fallback
-    }
+    const applicationsCount = appsCountRes.status === 'fulfilled' ? appsCountRes.value : 0;
+    const recentAppsCount = recentAppsRes.status === 'fulfilled' ? recentAppsRes.value : 0;
+    const resume = resumeRes.status === 'fulfilled' ? resumeRes.value : null;
+    const resumeScore = resume?.atsScore ?? resume?.score ?? 0;
+    const interviewCount = interviewRes.status === 'fulfilled' ? interviewRes.value : 0;
 
     // Weighted Score Calculation
     // 1. Resume baseline contribution (up to 30 pts)

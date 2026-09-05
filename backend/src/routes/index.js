@@ -20,6 +20,7 @@ const careerOSRoutes = require('./careerOS.routes');
 const careerAgentRoutes = require('./careerAgent.routes');
 const applicationAgentRoutes = require('./applicationAgent.routes');
 const personalizationRoutes = require('./personalization.routes');
+const careerIntelligenceRoutes = require('./careerIntelligence.routes');
 
 const router = express.Router();
 
@@ -45,5 +46,6 @@ router.use('/career-os', careerOSRoutes);
 router.use('/career-agent', careerAgentRoutes);
 router.use('/application-agent', applicationAgentRoutes);
 router.use('/personalization', personalizationRoutes);
+router.use('/career-intelligence', careerIntelligenceRoutes);
 
 module.exports = router;

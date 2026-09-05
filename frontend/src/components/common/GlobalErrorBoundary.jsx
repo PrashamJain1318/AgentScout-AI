@@ -1,5 +1,5 @@
-import React from 'react';
-import AuthVerification from '../auth/AuthVerification';
+import React from "react";
+import AuthVerification from "../auth/AuthVerification";
 
 class GlobalErrorBoundary extends React.Component {
   constructor(props) {
@@ -15,8 +15,12 @@ class GlobalErrorBoundary extends React.Component {
     console.error("Global UI Error Caught:", error, errorInfo);
   }
 
+  handleReset = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
   handleReload = () => {
-    window.location.reload();
+    window.location.href = "/dashboard";
   };
 
   render() {
@@ -24,9 +28,9 @@ class GlobalErrorBoundary extends React.Component {
       return (
         <AuthVerification
           state="ERROR"
-          title="UI Rendering Error"
-          description="Something went wrong while loading the page layout. Please refresh to restore your session."
-          onRetry={this.handleReload}
+          title="Session Recovery Required"
+          description="A visual component error occurred. Return to your career dashboard or refresh to continue."
+          onRetry={this.handleReset}
           fullScreen={true}
         />
       );

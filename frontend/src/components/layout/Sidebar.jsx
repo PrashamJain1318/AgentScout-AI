@@ -35,6 +35,11 @@ const navigationSections = [
     title: "AI INTELLIGENCE",
     items: [
       {
+        label: "Career Intelligence",
+        path: "/dashboard/career-intelligence",
+        icon: Sparkles,
+      },
+      {
         label: "AI Career Agent",
         path: "/dashboard/agent",
         icon: Bot,
@@ -133,6 +138,15 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
 
     if (navPath === "/dashboard") {
       return current === "/dashboard" || current === "/dashboard/";
+    }
+
+    if (navPath === "/dashboard/career-intelligence") {
+      return (
+        current === "/career-intelligence" ||
+        current === "/dashboard/career-intelligence" ||
+        current.startsWith("/career-intelligence/") ||
+        current.startsWith("/dashboard/career-intelligence/")
+      );
     }
 
     if (navPath === "/dashboard/agent") {

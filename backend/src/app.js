@@ -23,6 +23,7 @@ for (const p of envPaths) {
 dotenv.config(); // fallback default
 
 const { apiLimiter } = require('./middleware/rateLimiter.middleware');
+const performanceMonitor = require('./middleware/performance.middleware');
 const notFoundHandler = require('./middleware/notFound.middleware');
 const errorHandler = require('./middleware/error.middleware');
 const apiRouter = require('./routes');
@@ -31,6 +32,9 @@ const app = express();
 
 // Trust reverse proxy (Vercel / AWS / Cloudflare) for rate limiting & IP detection
 app.set('trust proxy', 1);
+
+// Performance Monitoring Middleware for Slow Requests (>1000ms)
+app.use(performanceMonitor(1000));
 
 // 1. Security HTTP Headers
 app.use(helmet({

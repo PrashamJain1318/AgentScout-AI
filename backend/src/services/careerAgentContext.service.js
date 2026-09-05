@@ -178,6 +178,9 @@ const buildUnifiedContext = async (userId) => {
         matchScore: m.matchScore || m.score || 85
       }))
     },
+    rawMatches: matches,
+    rawApplications: applications,
+    rawInterviewSessions: interviewSessions,
     matches: {
       total: matches.length,
       averageScore: averageMatchScore

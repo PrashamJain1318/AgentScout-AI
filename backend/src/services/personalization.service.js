@@ -27,9 +27,17 @@ const getPersonalization = async (userId) => {
 
 const refreshPersonalization = async (userId) => {
   try {
-    const { primaryFocus, smartPriorities } = await evaluateSmartPriorities(userId);
-    const momentum = await calculateMomentumScore(userId);
-    const journeyPhases = await getJourneyRoadmap(userId);
+    const [
+      prioritiesData,
+      momentum,
+      journeyPhases
+    ] = await Promise.all([
+      evaluateSmartPriorities(userId),
+      calculateMomentumScore(userId),
+      getJourneyRoadmap(userId)
+    ]);
+
+    const { primaryFocus, smartPriorities } = prioritiesData;
     const dailyInsight = getAIDailyInsight(primaryFocus);
     const widgetPriorityOrder = calculateWidgetPriority(primaryFocus);
 

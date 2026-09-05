@@ -8,27 +8,17 @@ const InterviewSession = require('../models/InterviewSession.model');
 
 const getJourneyRoadmap = async (userId) => {
   try {
-    let resume = null;
-    let appsCount = 0;
-    let interviewCount = 0;
-    let offerCount = 0;
+    const [resumeRes, appsCountRes, offerCountRes, interviewRes] = await Promise.allSettled([
+      Resume ? Resume.findOne({ user: userId }).select('atsScore score').lean() : Promise.resolve(null),
+      Application ? Application.countDocuments({ user: userId }) : Promise.resolve(0),
+      Application ? Application.countDocuments({ user: userId, status: { $in: ['OFFER', 'OFFER_ACCEPTED', 'HIRED'] } }) : Promise.resolve(0),
+      InterviewSession ? InterviewSession.countDocuments({ user: userId }) : Promise.resolve(0)
+    ]);
 
-    try {
-      if (Resume) resume = await Resume.findOne({ user: userId }).lean();
-    } catch (e) {}
-
-    try {
-      if (Application) {
-        appsCount = await Application.countDocuments({ user: userId });
-        offerCount = await Application.countDocuments({ user: userId, status: { $in: ['OFFER', 'OFFER_ACCEPTED', 'HIRED'] } });
-      }
-    } catch (e) {}
-
-    try {
-      if (InterviewSession) {
-        interviewCount = await InterviewSession.countDocuments({ user: userId });
-      }
-    } catch (e) {}
+    const resume = resumeRes.status === 'fulfilled' ? resumeRes.value : null;
+    const appsCount = appsCountRes.status === 'fulfilled' ? appsCountRes.value : 0;
+    const offerCount = offerCountRes.status === 'fulfilled' ? offerCountRes.value : 0;
+    const interviewCount = interviewRes.status === 'fulfilled' ? interviewRes.value : 0;
 
     const atsScore = resume?.atsScore ?? resume?.score ?? 0;
 

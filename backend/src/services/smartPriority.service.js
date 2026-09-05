@@ -9,48 +9,18 @@ const InterviewSession = require('../models/InterviewSession.model');
 
 const evaluateSmartPriorities = async (userId) => {
   try {
-    // 1. Fetch user data safely
-    let resume = null;
-    let applications = [];
-    let topOpportunity = null;
-    let upcomingInterview = null;
+    // Concurrent fetch using Promise.allSettled for maximum throughput
+    const [resumeRes, appsRes, oppRes, interviewRes] = await Promise.allSettled([
+      Resume ? Resume.findOne({ user: userId }).select('atsScore score updatedAt').sort({ updatedAt: -1 }).lean() : Promise.resolve(null),
+      Application ? Application.find({ user: userId }).select('status createdAt updatedAt').sort({ updatedAt: -1 }).limit(10).lean() : Promise.resolve([]),
+      Opportunity ? Opportunity.findOne({ status: 'ACTIVE', matchScore: { $gte: 75 } }).select('title company matchScore').sort({ matchScore: -1 }).lean() : Promise.resolve(null),
+      InterviewSession ? InterviewSession.findOne({ user: userId, status: { $in: ['SCHEDULED', 'IN_PROGRESS', 'PREPARING', 'COMPLETED'] } }).select('targetRole status').sort({ createdAt: -1 }).lean() : Promise.resolve(null)
+    ]);
 
-    try {
-      if (Resume) {
-        resume = await Resume.findOne({ user: userId }).sort({ updatedAt: -1 }).lean();
-      }
-    } catch (err) {
-      // safe fallback
-    }
-
-    try {
-      if (Application) {
-        applications = await Application.find({ user: userId }).sort({ updatedAt: -1 }).limit(10).lean();
-      }
-    } catch (err) {
-      // safe fallback
-    }
-
-    try {
-      if (Opportunity) {
-        topOpportunity = await Opportunity.findOne({ status: 'ACTIVE', matchScore: { $gte: 75 } })
-          .sort({ matchScore: -1 })
-          .lean();
-      }
-    } catch (err) {
-      // safe fallback
-    }
-
-    try {
-      if (InterviewSession) {
-        upcomingInterview = await InterviewSession.findOne({
-          user: userId,
-          status: { $in: ['SCHEDULED', 'IN_PROGRESS', 'PREPARING', 'COMPLETED'] }
-        }).sort({ createdAt: -1 }).lean();
-      }
-    } catch (err) {
-      // safe fallback
-    }
+    const resume = resumeRes.status === 'fulfilled' ? resumeRes.value : null;
+    const applications = appsRes.status === 'fulfilled' && Array.isArray(appsRes.value) ? appsRes.value : [];
+    const topOpportunity = oppRes.status === 'fulfilled' ? oppRes.value : null;
+    const upcomingInterview = interviewRes.status === 'fulfilled' ? interviewRes.value : null;
 
     const priorities = [];
     let primaryFocus = 'CAREER_GROWTH';
