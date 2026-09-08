@@ -5,8 +5,7 @@ const CareerAgentExecutionSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
-      index: true
+      required: true
     },
     agentAction: {
       type: mongoose.Schema.Types.ObjectId,
@@ -20,8 +19,7 @@ const CareerAgentExecutionSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'RETRYING', 'CANCELLED'],
-      default: 'QUEUED',
-      index: true
+      default: 'QUEUED'
     },
     riskLevel: {
       type: String,
@@ -63,8 +61,7 @@ const CareerAgentExecutionSchema = new mongoose.Schema(
     idempotencyKey: {
       type: String,
       required: true,
-      unique: true,
-      index: true
+      unique: true
     },
     metadata: {
       type: Object,

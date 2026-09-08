@@ -5,8 +5,7 @@ const CareerAgentActionSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
-      index: true
+      required: true
     },
     agent: {
       type: mongoose.Schema.Types.ObjectId,
@@ -49,8 +48,7 @@ const CareerAgentActionSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['PENDING', 'APPROVED', 'REJECTED', 'EXECUTING', 'COMPLETED', 'FAILED', 'EXPIRED', 'CANCELLED'],
-      default: 'PENDING',
-      index: true
+      default: 'PENDING'
     },
     requestedAt: {
       type: Date,

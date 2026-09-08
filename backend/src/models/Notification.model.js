@@ -5,8 +5,7 @@ const NotificationSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Notification requires a valid user reference'],
-      index: true
+      required: [true, 'Notification requires a valid user reference']
     },
     type: {
       type: String,
@@ -39,8 +38,7 @@ const NotificationSchema = new mongoose.Schema(
     },
     read: {
       type: Boolean,
-      default: false,
-      index: true
+      default: false
     },
     link: {
       type: String,

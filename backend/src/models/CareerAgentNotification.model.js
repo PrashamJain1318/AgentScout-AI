@@ -5,8 +5,7 @@ const CareerAgentNotificationSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
-      index: true
+      required: true
     },
     type: {
       type: String,
@@ -61,9 +60,8 @@ const CareerAgentNotificationSchema = new mongoose.Schema(
     deduplicationKey: {
       type: String,
       required: true,
-      unique: true,
-      index: true
-    }
+      unique: true
+    },
   },
   {
     timestamps: true

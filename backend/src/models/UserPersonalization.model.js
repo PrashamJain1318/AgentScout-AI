@@ -6,8 +6,7 @@ const UserPersonalizationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true,
-      index: true
+      unique: true
     },
     currentStage: {
       type: String,
@@ -91,7 +90,5 @@ const UserPersonalizationSchema = new mongoose.Schema(
     timestamps: true
   }
 );
-
-UserPersonalizationSchema.index({ user: 1 });
 
 module.exports = mongoose.model('UserPersonalization', UserPersonalizationSchema);
