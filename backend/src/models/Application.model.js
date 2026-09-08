@@ -99,6 +99,9 @@ const ApplicationSchema = new mongoose.Schema(
 );
 
 // Compound index ensuring unique application per user and opportunity (when opportunity is provided)
-ApplicationSchema.index({ user: 1, opportunity: 1 }, { unique: true, sparse: true });
+ApplicationSchema.index(
+  { user: 1, opportunity: 1 },
+  { unique: true, partialFilterExpression: { opportunity: { $type: 'objectId' } } }
+);
 
 module.exports = mongoose.model('Application', ApplicationSchema);
