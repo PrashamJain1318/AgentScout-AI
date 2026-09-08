@@ -83,6 +83,4 @@ const CareerIntelligenceProfileSchema = new mongoose.Schema(
   }
 );
 
-CareerIntelligenceProfileSchema.index({ user: 1 });
-
 module.exports = mongoose.model('CareerIntelligenceProfile', CareerIntelligenceProfileSchema);

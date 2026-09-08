@@ -79,6 +79,4 @@ const OpportunityMonitorSchema = new mongoose.Schema(
   }
 );
 
-OpportunityMonitorSchema.index({ user: 1 }, { unique: true });
-
 module.exports = mongoose.model('OpportunityMonitor', OpportunityMonitorSchema);

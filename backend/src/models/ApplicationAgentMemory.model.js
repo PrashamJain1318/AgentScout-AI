@@ -52,7 +52,6 @@ const ApplicationAgentMemorySchema = new mongoose.Schema(
   }
 );
 
-ApplicationAgentMemorySchema.index({ user: 1 });
 ApplicationAgentMemorySchema.index({ user: 1, type: 1 });
 
 module.exports = mongoose.model('ApplicationAgentMemory', ApplicationAgentMemorySchema);
