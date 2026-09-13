@@ -45,7 +45,7 @@ const extractStructuredResumeData = async (rawText, userProfile = {}) => {
     email: det.email || userProfile.email || '',
     phone: det.phone || '',
     location: userProfile.profile?.location || '',
-    headline: userProfile.profile?.headline || 'Software Engineer',
+    headline: userProfile.profile?.targetRole || userProfile.profile?.headline || null,
     summary: rawText.slice(0, 300),
     skills: det.skills.length > 0 ? det.skills : (userProfile.profile?.skills || []),
     experience: [],

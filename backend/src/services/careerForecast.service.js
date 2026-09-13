@@ -39,7 +39,7 @@ const generateCareerForecasts = (unifiedContext) => {
     forecasts.push({
       type: 'MEDIUM_TERM',
       title: 'High-Match Opportunity Conversion',
-      prediction: `Applying to target roles such as "${topMatch.opportunity?.title || 'Senior Software Engineer'}" with tailored application collateral potentially boosts candidate shortlist probability.`,
+      prediction: `Applying to target roles such as "${topMatch.opportunity?.title || 'Target Role'}" with tailored application collateral potentially boosts candidate shortlist probability.`,
       confidence: 85,
       evidence: `Match score of ${topMatch.matchScore || 90}% demonstrates strong experience alignment.`,
       recommendedActions: ['Generate tailored cover letter', 'Review interview readiness score']

@@ -16,8 +16,12 @@ import {
 } from "../components/career-os/IntelligenceCards";
 
 import { getSnapshot, refresh } from "../services/careerOS.api";
+import useCareerState from "../hooks/useCareerState";
 
 const CareerOS = () => {
+  const careerState = useCareerState();
+  const { loading: stateLoading, refetch } = careerState;
+
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,6 +52,7 @@ const CareerOS = () => {
     try {
       const res = await refresh();
       setSnapshot(res.data || null);
+      if (refetch) await refetch();
     } catch (err) {
       setErrorNotice("Unable to refresh Career Operating System snapshot.");
     } finally {
@@ -55,15 +60,17 @@ const CareerOS = () => {
     }
   };
 
-  const s = snapshot || {};
+  const s = snapshot || careerState.osSnapshot || {};
   const readiness = s.readiness || {};
   const actionState = s.actionState || {};
   const nextAction = actionState.nextBestAction || { title: "Review Career Plan", deepLink: "/dashboard" };
   const risks = Array.isArray(s.riskState) ? s.riskState : [];
   const opportunities = Array.isArray(s.recommendations) ? s.recommendations : [];
-  const momentum = s.momentum || { score: 50, trend: "STABLE", changePercentage: 0 };
+  const momentum = s.momentum || { score: 0, trend: "NEUTRAL", changePercentage: 0 };
   const milestones = Array.isArray(s.milestones) ? s.milestones : [];
   const recentChanges = Array.isArray(s.recentChanges) ? s.recentChanges : [];
+
+  const isPageLoading = loading && stateLoading;
 
   return (
     <div className="resume-page-container">
@@ -77,14 +84,14 @@ const CareerOS = () => {
         </div>
       )}
 
-      {loading ? (
+      {isPageLoading ? (
         <CareerOSSkeleton />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* 1. Header Metrics: Career Score & Momentum */}
+          {/* 1. Header Metrics: Career Score Visualization & Momentum */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "16px" }}>
-            <CareerScore score={s.careerScore || 0} stage={s.careerStage || "PROFILE_BUILDING"} />
-            <CareerMomentum momentum={momentum} />
+            <CareerScore careerState={careerState} score={s.careerScore} stage={s.careerStage} />
+            <CareerMomentum momentum={momentum} careerState={careerState} />
           </div>
 
           {/* 2. Executive AI Briefing */}

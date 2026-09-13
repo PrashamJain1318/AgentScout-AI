@@ -7,6 +7,7 @@ const SUGGESTED_WORK_MODES = ["Remote", "Hybrid", "On-site"];
 const SUGGESTED_EXP_LEVELS = ["Intern", "Entry Level", "Junior", "Mid Level", "Senior", "Lead", "Principal"];
 
 const JobPreferences = ({ initialPreferences = {}, onUpdated }) => {
+  const [targetRole, setTargetRole] = useState(initialPreferences.targetRole || "");
   const [desiredRoles, setDesiredRoles] = useState(initialPreferences.desiredRoles || []);
   const [roleInput, setRoleInput] = useState("");
 
@@ -16,7 +17,7 @@ const JobPreferences = ({ initialPreferences = {}, onUpdated }) => {
   const [jobTypes, setJobTypes] = useState(initialPreferences.jobTypes || ["Full-time"]);
   const [workModes, setWorkModes] = useState(initialPreferences.workModes || ["Remote", "Hybrid"]);
   const [minimumSalary, setMinimumSalary] = useState(initialPreferences.minimumSalary || 0);
-  const [experienceLevel, setExperienceLevel] = useState(initialPreferences.experienceLevel || "Mid Level");
+  const [experienceLevel, setExperienceLevel] = useState(initialPreferences.experienceLevel || "");
   const [remotePreference, setRemotePreference] = useState(
     typeof initialPreferences.remotePreference === "boolean" ? initialPreferences.remotePreference : true
   );
@@ -26,12 +27,13 @@ const JobPreferences = ({ initialPreferences = {}, onUpdated }) => {
   const [errorNotice, setErrorNotice] = useState(null);
 
   useEffect(() => {
+    if (initialPreferences.targetRole !== undefined) setTargetRole(initialPreferences.targetRole || "");
     if (initialPreferences.desiredRoles) setDesiredRoles(initialPreferences.desiredRoles);
     if (initialPreferences.preferredLocations) setPreferredLocations(initialPreferences.preferredLocations);
     if (initialPreferences.jobTypes) setJobTypes(initialPreferences.jobTypes);
     if (initialPreferences.workModes) setWorkModes(initialPreferences.workModes);
     if (initialPreferences.minimumSalary !== undefined) setMinimumSalary(initialPreferences.minimumSalary);
-    if (initialPreferences.experienceLevel) setExperienceLevel(initialPreferences.experienceLevel);
+    if (initialPreferences.experienceLevel !== undefined) setExperienceLevel(initialPreferences.experienceLevel || "");
   }, [initialPreferences]);
 
   const handleAddRole = (e) => {
@@ -82,12 +84,13 @@ const JobPreferences = ({ initialPreferences = {}, onUpdated }) => {
 
     try {
       const payload = {
+        targetRole,
         desiredRoles,
         preferredLocations,
         jobTypes,
         workModes,
         minimumSalary: Number(minimumSalary) || 0,
-        experienceLevel,
+        experienceLevel: experienceLevel || null,
         remotePreference,
       };
 
@@ -124,9 +127,23 @@ const JobPreferences = ({ initialPreferences = {}, onUpdated }) => {
 
       <form onSubmit={handleSubmit} className="settings-form">
 
+        {/* Target Role */}
+        <div className="form-group">
+          <label htmlFor="targetRole">Primary Target Role</label>
+          <input
+            type="text"
+            id="targetRole"
+            className="form-input"
+            value={targetRole}
+            onChange={(e) => setTargetRole(e.target.value)}
+            placeholder="e.g. Software Engineer, Product Manager..."
+            required
+          />
+        </div>
+
         {/* Preferred Job Titles */}
         <div className="form-group">
-          <label>Preferred Job Titles</label>
+          <label>Secondary Desired Roles</label>
           <div className="tags-chip-wrapper">
             {desiredRoles.map((role) => (
               <span key={role} className="tag-chip">
@@ -237,6 +254,7 @@ const JobPreferences = ({ initialPreferences = {}, onUpdated }) => {
               value={experienceLevel}
               onChange={(e) => setExperienceLevel(e.target.value)}
             >
+              <option value="">Select Experience Level</option>
               {SUGGESTED_EXP_LEVELS.map((lvl) => (
                 <option key={lvl} value={lvl}>
                   {lvl}

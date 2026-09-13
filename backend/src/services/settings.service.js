@@ -33,7 +33,8 @@ const getSettings = async (userId) => {
       jobTypes: Array.isArray(pref.jobTypes) ? pref.jobTypes : ['Full-time'],
       workModes: Array.isArray(pref.workModes) ? pref.workModes : ['Remote', 'Hybrid'],
       minimumSalary: typeof pref.minimumSalary === 'number' ? pref.minimumSalary : 0,
-      experienceLevel: pref.experienceLevel || 'Mid Level',
+      targetRole: p.targetRole || null,
+      experienceLevel: pref.experienceLevel || null,
       remotePreference: typeof pref.remotePreference === 'boolean' ? pref.remotePreference : true
     },
     notificationPreferences: {
@@ -102,6 +103,10 @@ const updateJobPreferences = async (userId, data = {}) => {
 
   const pref = user.profile.preferences;
 
+  if (typeof data.targetRole === 'string') {
+    user.profile.targetRole = data.targetRole.trim() || null;
+  }
+
   if (Array.isArray(data.desiredRoles)) {
     pref.desiredRoles = data.desiredRoles.filter(r => typeof r === 'string').map(r => r.trim());
   }
@@ -122,8 +127,8 @@ const updateJobPreferences = async (userId, data = {}) => {
     pref.minimumSalary = Math.max(0, Number(data.minimumSalary));
   }
 
-  if (typeof data.experienceLevel === 'string' && data.experienceLevel.trim()) {
-    pref.experienceLevel = data.experienceLevel.trim();
+  if (typeof data.experienceLevel === 'string') {
+    pref.experienceLevel = data.experienceLevel.trim() || null;
   }
 
   if (typeof data.remotePreference === 'boolean') {

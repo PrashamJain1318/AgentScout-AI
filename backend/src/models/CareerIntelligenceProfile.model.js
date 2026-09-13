@@ -10,7 +10,7 @@ const CareerIntelligenceProfileSchema = new mongoose.Schema(
     },
     targetRole: {
       type: String,
-      default: ''
+      default: null
     },
     careerStage: {
       type: String,
@@ -28,7 +28,7 @@ const CareerIntelligenceProfileSchema = new mongoose.Schema(
     },
     experienceLevel: {
       type: String,
-      default: ''
+      default: null
     },
     primarySkills: [String],
     secondarySkills: [String],

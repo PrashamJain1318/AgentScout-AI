@@ -237,7 +237,7 @@ const generateCoverLetter = async (userId, opportunityId, tone = 'Professional',
   const candidateName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Candidate';
   const candidateSkills = (resume?.extractedData?.skills || user?.profile?.skills || []).join(', ') || 'Software Development';
   const company = opportunity.company || 'Hiring Team';
-  const title = opportunity.title || 'Software Engineer';
+  const title = opportunity.title || 'Target Role';
 
   let content = `Dear Hiring Manager at ${company},
 
@@ -258,7 +258,7 @@ ${candidateName}`;
       CANDIDATE DETAILS:
       Name: ${candidateName}
       Skills: ${candidateSkills}
-      Headline: ${user?.profile?.headline || 'Software Engineer'}
+      Headline: ${user?.profile?.targetRole || user?.profile?.headline || 'Target Role'}
       
       JOB DETAILS:
       Title: ${title}
@@ -326,7 +326,7 @@ const generateApplicationAnswers = async (userId, opportunityId, customQuestions
   const candidateName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Candidate';
   const candidateSkills = (resume?.extractedData?.skills || user?.profile?.skills || []).join(', ') || 'Software Development';
   const company = opportunity.company || 'Company';
-  const title = opportunity.title || 'Software Engineer';
+  const title = opportunity.title || 'Target Role';
 
   const defaultQuestions = [
     'Why do you want to work here?',

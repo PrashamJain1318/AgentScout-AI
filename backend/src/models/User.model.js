@@ -63,6 +63,7 @@ const UserSchema = new mongoose.Schema(
       }
     },
     profile: {
+      targetRole: { type: String, default: null },
       headline: { type: String, default: '' },
       bio: { type: String, default: '' },
       biography: { type: String, default: '' },
@@ -78,7 +79,7 @@ const UserSchema = new mongoose.Schema(
         jobTypes: { type: [String], default: ['Full-time'] },
         workModes: { type: [String], default: ['Remote', 'Hybrid'] },
         minimumSalary: { type: Number, default: 0 },
-        experienceLevel: { type: String, default: 'Mid Level' },
+        experienceLevel: { type: String, default: null },
         remotePreference: { type: Boolean, default: true }
       },
       notificationPreferences: {

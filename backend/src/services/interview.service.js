@@ -69,6 +69,7 @@ const buildInterviewContext = async (userId, opportunityId = null) => {
     candidate: {
       name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Candidate',
       headline: user?.profile?.headline || null,
+      targetRole: user?.profile?.targetRole || null,
       skills: allSkills,
       experience,
       projects,
@@ -104,8 +105,8 @@ const buildInterviewContext = async (userId, opportunityId = null) => {
 const generateDynamicQuestions = async (context, interviewType, difficulty, count = 5) => {
   const { candidate, opportunity, match } = context;
   const company = opportunity?.company || 'Target Company';
-  const role = opportunity?.title || candidate.headline || 'Software Engineer';
-  const skills = candidate.skills.slice(0, 5).join(', ') || 'Software Development';
+  const role = opportunity?.title || candidate.targetRole || candidate.headline || 'Target Role';
+  const skills = candidate.skills.slice(0, 5).join(', ') || 'Core Skills';
   const gaps = match.missingSkills.slice(0, 3).join(', ') || 'Cloud & System Design';
 
   const defaultQuestions = [

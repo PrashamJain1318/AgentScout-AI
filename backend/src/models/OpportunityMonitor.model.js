@@ -39,7 +39,7 @@ const OpportunityMonitorSchema = new mongoose.Schema(
     },
     experienceLevel: {
       type: String,
-      default: 'Mid Level'
+      default: null
     },
     minimumMatchScore: {
       type: Number,

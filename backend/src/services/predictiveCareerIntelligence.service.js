@@ -198,8 +198,8 @@ const getPredictiveIntelligence = async (userId, forceRefresh = false) => {
 
     const updatePayload = {
       user: userId,
-      targetRole: unifiedContext.user?.targetRole || 'Software Engineer',
-      experienceLevel: unifiedContext.user?.profile?.experienceLevel || 'Mid-Level',
+      targetRole: unifiedContext.profile?.targetRole || null,
+      experienceLevel: unifiedContext.profile?.experienceLevel || null,
       primarySkills: skillGaps.skillStrengths,
       skillGaps: skillGaps.skillGaps,
       readinessScore: health.breakdown.resumeReadiness,

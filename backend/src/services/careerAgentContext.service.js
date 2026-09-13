@@ -142,8 +142,8 @@ const buildUnifiedContext = async (userId) => {
       avatar: user.avatar || ''
     },
     goals: {
-      currentGoal: 'Maximize hiring probability for target software engineering roles',
-      desiredRoles: profile.preferences?.desiredRoles || ['Software Engineer'],
+      currentGoal: profile.targetRole ? `Maximize hiring probability for target ${profile.targetRole} roles` : 'Maximize hiring probability for target roles',
+      desiredRoles: profile.preferences?.desiredRoles || (profile.targetRole ? [profile.targetRole] : []),
       preferredLocations: profile.preferences?.preferredLocations || ['Remote'],
       workModes: profile.preferences?.workModes || ['Remote', 'Hybrid']
     },
@@ -151,9 +151,11 @@ const buildUnifiedContext = async (userId) => {
     profile: {
       completion: profileCompletion,
       headline: profile.headline || '',
+      targetRole: profile.targetRole || null,
       location: profile.location || '',
       experienceCount: (profile.experience || []).length,
-      educationCount: (profile.education || []).length
+      educationCount: (profile.education || []).length,
+      experienceLevel: profile.preferences?.experienceLevel || null
     },
     resume: {
       exists: Boolean(resume),
@@ -179,8 +181,8 @@ const buildUnifiedContext = async (userId) => {
       highQualityCount: highQualityMatches.length,
       topMatches: highQualityMatches.slice(0, 3).map(m => ({
         id: m.opportunity?._id || m._id,
-        title: m.opportunity?.title || 'Software Engineer',
-        company: m.opportunity?.company || 'Target Company',
+        title: m.opportunity?.title || 'Unknown Role',
+        company: m.opportunity?.company || 'Unknown Company',
         matchScore: m.matchScore || m.score || 85
       }))
     },

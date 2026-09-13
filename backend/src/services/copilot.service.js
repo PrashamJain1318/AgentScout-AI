@@ -115,6 +115,7 @@ const buildUserCareerContext = async (userId) => {
     candidate: {
       name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Candidate',
       headline,
+      targetRole: profile.targetRole || null,
       bio,
       location,
       skills: candidateSkills,
@@ -355,7 +356,7 @@ const getSkillGapAnalysis = async (userId) => {
   const skillGaps = (m.topMissingSkills || ['TypeScript', 'Docker', 'AWS', 'GraphQL']).map((skill, idx) => ({
     skill,
     importance: idx < 2 ? 'high' : 'medium',
-    reason: `Required by multiple active opportunities matching your target role (${context.candidate.headline}).`,
+    reason: `Required by multiple active opportunities matching your target role (${context.candidate.targetRole || context.candidate.headline || 'Target Role'}).`,
     relatedRoles: (m.sampleMatches || []).map(sm => sm.role).filter(Boolean)
   }));
 
@@ -370,7 +371,7 @@ const generateRoadmap = async (userId, duration = 30) => {
   return {
     title: `${duration}-Day AI Career Acceleration Plan`,
     duration,
-    candidateHeadline: candidate.headline,
+    candidateHeadline: candidate.targetRole || candidate.headline || 'Target Role',
     weeks: [
       {
         week: 1,
@@ -410,7 +411,7 @@ const generateRoadmap = async (userId, duration = 30) => {
           `Review STAR method behavioral stories for previous work at ${candidate.experience[0]?.company || 'past roles'}.`,
           `Conduct full mock interview.`
         ],
-        outcome: `High interview readiness for target role: ${candidate.headline}.`
+        outcome: `High interview readiness for target role: ${candidate.targetRole || candidate.headline || 'Target Role'}.`
       }
     ]
   };
@@ -425,7 +426,7 @@ const generateInterviewPrep = async (userId, opportunityId = null) => {
     opp = await Opportunity.findById(opportunityId);
   }
   if (!opp) {
-    opp = context.opportunities[0] || { title: candidate.headline || 'Software Engineer', company: 'Target Company', requirements: candidate.skills };
+    opp = context.opportunities[0] || { title: candidate.targetRole || candidate.headline || 'Target Role', company: 'Target Company', requirements: candidate.skills };
   }
 
   const matched = (opp.requirements || []).filter(req => candidate.skills.some(cs => cs.toLowerCase() === req.toLowerCase()));
