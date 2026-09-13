@@ -1,5 +1,4 @@
-const { isGeminiConfigured } = require('../config/gemini');
-const { makeGeminiHttpRequest } = require('./gemini.service');
+const aiProvider = require('./ai/aiProvider');
 
 const COMMON_SKILLS = [
   'React', 'React.js', 'Node.js', 'Express', 'Express.js', 'MongoDB', 'JavaScript', 'TypeScript',
@@ -15,9 +14,8 @@ const COMMON_SKILLS = [
 const extractDeterministic = (text = '') => {
   const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
   const phoneMatch = text.match(/(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
-  
+
   const foundSkills = new Set();
-  const lowerText = text.toLowerCase();
 
   COMMON_SKILLS.forEach(skill => {
     const escaped = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -35,10 +33,50 @@ const extractDeterministic = (text = '') => {
 };
 
 /**
- * Extract structured resume data using Gemini AI if available or fallback.
+ * Attach AI Provenance tagging to skills array.
+ * Separates authentic RESUME user skills from AI_RECOMMENDATION suggestions.
+ */
+const formatSkillsWithProvenance = (resumeSkills = [], aiRecommendedSkills = []) => {
+  const provenanceList = [];
+  const seen = new Set();
+
+  // 1. Confirmed Resume Skills (Source: RESUME)
+  resumeSkills.forEach(s => {
+    const name = String(typeof s === 'object' ? s.name : s).trim();
+    if (name && !seen.has(name.toLowerCase())) {
+      seen.add(name.toLowerCase());
+      provenanceList.push({
+        name,
+        source: "RESUME",
+        confidence: 0.95
+      });
+    }
+  });
+
+  // 2. AI Recommended Skills (Source: AI_RECOMMENDATION)
+  aiRecommendedSkills.forEach(s => {
+    const name = String(typeof s === 'object' ? s.name : s).trim();
+    if (name && !seen.has(name.toLowerCase())) {
+      seen.add(name.toLowerCase());
+      provenanceList.push({
+        name,
+        source: "AI_RECOMMENDATION",
+        confidence: 0.82
+      });
+    }
+  });
+
+  return provenanceList;
+};
+
+/**
+ * Extract structured resume data using AI Abstraction Provider (NVIDIA NIM / Gemini).
  */
 const extractStructuredResumeData = async (rawText, userProfile = {}) => {
   const det = extractDeterministic(rawText);
+
+  const rawResumeSkills = det.skills.length > 0 ? det.skills : (userProfile.profile?.skills || []);
+  const initialProvenanceSkills = formatSkillsWithProvenance(rawResumeSkills, []);
 
   let extracted = {
     name: `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim(),
@@ -47,22 +85,28 @@ const extractStructuredResumeData = async (rawText, userProfile = {}) => {
     location: userProfile.profile?.location || '',
     headline: userProfile.profile?.targetRole || userProfile.profile?.headline || null,
     summary: rawText.slice(0, 300),
-    skills: det.skills.length > 0 ? det.skills : (userProfile.profile?.skills || []),
+    skills: rawResumeSkills,
+    provenanceSkills: initialProvenanceSkills,
     experience: [],
     education: [],
     projects: [],
     certifications: [],
-    languages: []
+    strengths: [],
+    skillGaps: [],
+    recommendedSkills: []
   };
 
-  if (isGeminiConfigured() && rawText.length > 50) {
+  if (rawText && rawText.length > 50) {
     try {
-      const prompt = `Analyze this resume text and extract candidate details as JSON:
+      const prompt = `Analyze this candidate resume text and target role to generate a structured analysis.
       
       RESUME TEXT:
       ${rawText.slice(0, 4000)}
-      
-      Respond ONLY with a valid JSON object matching this schema:
+
+      TARGET ROLE:
+      ${userProfile.profile?.targetRole || 'Software Professional'}
+
+      Return strictly a valid JSON object matching this schema:
       {
         "name": "string",
         "email": "string",
@@ -99,21 +143,31 @@ const extractStructuredResumeData = async (rawText, userProfile = {}) => {
           }
         ],
         "certifications": ["string"],
-        "languages": ["string"]
+        "strengths": ["string"],
+        "skillGaps": ["string"],
+        "recommendedSkills": ["string"]
       }`;
 
-      const aiResponse = await makeGeminiHttpRequest(prompt);
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      const parsed = await aiProvider.generateJSON(prompt, {
+        temperature: 0.2,
+        systemPrompt: "You are AgentScout Resume Intelligence AI."
+      });
+
+      if (parsed && typeof parsed === 'object') {
+        const combinedResumeSkills = Array.from(new Set([...(parsed.skills || []), ...det.skills]));
+        const aiRecommendations = Array.from(new Set(parsed.recommendedSkills || []));
+        const provenanceSkills = formatSkillsWithProvenance(combinedResumeSkills, aiRecommendations);
+
         extracted = {
           ...extracted,
           ...parsed,
-          skills: Array.from(new Set([...(parsed.skills || []), ...det.skills]))
+          skills: combinedResumeSkills,
+          provenanceSkills,
+          recommendedSkills: aiRecommendations
         };
       }
     } catch (err) {
-      console.warn('Gemini extraction fallback:', err.message);
+      console.warn('AI Resume Extraction Warning:', err.message);
     }
   }
 
@@ -122,5 +176,6 @@ const extractStructuredResumeData = async (rawText, userProfile = {}) => {
 
 module.exports = {
   extractDeterministic,
+  formatSkillsWithProvenance,
   extractStructuredResumeData
 };

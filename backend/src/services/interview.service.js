@@ -7,8 +7,7 @@ const Resume = require('../models/Resume.model');
 const Application = require('../models/Application.model');
 const ApplicationAssistant = require('../models/ApplicationAssistant.model');
 const notificationService = require('./notification.service');
-const { isGeminiConfigured } = require('../config/gemini');
-const { makeGeminiHttpRequest } = require('./gemini.service');
+const aiProvider = require('./ai/aiProvider');
 
 /**
  * Build rich candidate interview context.
@@ -160,11 +159,8 @@ const generateDynamicQuestions = async (context, interviewType, difficulty, coun
     finalQuestions = finalQuestions.slice(0, count);
   }
 
-  // Attempt Gemini dynamic generation if key configured
-  if (isGeminiConfigured()) {
-    try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      const prompt = `Generate exactly ${count} highly targeted, candidate-specific interview questions for a mock interview.
+  try {
+    const prompt = `Generate exactly ${count} highly targeted, candidate-specific interview questions for a mock interview.
 
 CANDIDATE:
 - Name: ${candidate.name}
@@ -192,31 +188,21 @@ RETURN JSON ARRAY ONLY with schema:
   }
 ]`;
 
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, responseMimeType: 'application/json' }
-      };
+    const parsed = await aiProvider.generateJSON(prompt, {
+      temperature: 0.3,
+      systemPrompt: "You are AgentScout AI Technical Interview Coach."
+    });
 
-      const aiRes = await makeGeminiHttpRequest(apiKey, payload, 15000);
-      if (aiRes.statusCode >= 200 && aiRes.statusCode < 300 && aiRes.data) {
-        const text = aiRes.data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          let clean = text.trim();
-          if (clean.startsWith('```')) clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-          const parsed = JSON.parse(clean);
-          if (Array.isArray(parsed) && parsed.length >= count) {
-            finalQuestions = parsed.slice(0, count).map(q => ({
-              question: q.question,
-              category: q.category || 'Technical',
-              difficulty: q.difficulty || difficulty,
-              expectedTopics: Array.isArray(q.expectedTopics) ? q.expectedTopics : ['Core Technical Skills']
-            }));
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('Gemini Question Generation Fallback:', err.message);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      finalQuestions = parsed.slice(0, count).map(q => ({
+        question: q.question,
+        category: q.category || 'Technical',
+        difficulty: q.difficulty || difficulty,
+        expectedTopics: Array.isArray(q.expectedTopics) ? q.expectedTopics : ['Core Skills']
+      }));
     }
+  } catch (err) {
+    console.warn('AI Interview question generation warning:', err.message);
   }
 
   return finalQuestions;

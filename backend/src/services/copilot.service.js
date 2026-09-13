@@ -17,8 +17,7 @@ const CareerAgentMemory = require('../models/CareerAgentMemory.model');
 const CareerHealth = require('../models/CareerHealth.model');
 const CareerEvent = require('../models/CareerEvent.model');
 
-const { isGeminiConfigured } = require('../config/gemini');
-const { makeGeminiHttpRequest } = require('./gemini.service');
+const aiProvider = require('./ai/aiProvider');
 
 /**
  * Build rich candidate career context for AI Copilot reasoning.
@@ -258,13 +257,7 @@ Strict Rules:
 const processCopilotChat = async (userId, userMessage) => {
   const context = await buildUserCareerContext(userId);
 
-  if (!isGeminiConfigured()) {
-    return generateLocalChatFallback(userMessage, context);
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  const promptText = `${SYSTEM_PROMPT_BASE}
-
+  const promptText = `
 CANDIDATE CAREER CONTEXT:
 ${JSON.stringify(context, null, 2)}
 
@@ -273,22 +266,16 @@ USER CANDIDATE QUESTION:
 
 Answer the user's question directly using the candidate's context data above. Provide concrete advice and markdown formatting:`;
 
-  const payload = {
-    contents: [{ parts: [{ text: promptText }] }],
-    generationConfig: { temperature: 0.3 }
-  };
-
   try {
-    const res = await makeGeminiHttpRequest(apiKey, payload, 12000);
-    if (res.statusCode >= 200 && res.statusCode < 300 && res.data) {
-      const candidates = res.data.candidates;
-      if (Array.isArray(candidates) && candidates.length > 0) {
-        const text = candidates[0].content?.parts[0]?.text;
-        if (text) return text.trim();
-      }
-    }
+    const text = await aiProvider.generateText(promptText, {
+      systemPrompt: SYSTEM_PROMPT_BASE,
+      temperature: 0.3,
+      timeoutMs: 15000
+    });
+
+    if (text) return text.trim();
   } catch (err) {
-    console.warn(`Gemini Chat Warning: ${err.message}. Using safe context fallback.`);
+    console.warn(`AI Copilot Chat Warning: ${err.message}. Using safe context fallback.`);
   }
 
   return generateLocalChatFallback(userMessage, context);

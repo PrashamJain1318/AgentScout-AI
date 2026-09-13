@@ -1,6 +1,5 @@
-const https = require('https');
 const Opportunity = require('../models/Opportunity.model');
-const { isGeminiConfigured } = require('../config/gemini');
+const aiProvider = require('./ai/aiProvider');
 
 /**
  * Perform HTTPS POST request to Google Gemini API with timeout protection.
@@ -120,11 +119,6 @@ const parseHeuristicQuery = (queryText = '') => {
  * @returns {Promise<Object>} Structured search filters
  */
 const interpretQueryWithGemini = async (queryText = '') => {
-  if (!isGeminiConfigured()) {
-    return parseHeuristicQuery(queryText);
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
   const promptText = `
 You are an intelligent search intent parser for job and internship opportunities at AgentScout AI.
 Parse the following candidate natural language search query into a structured JSON filter object:
@@ -155,49 +149,25 @@ REQUIRED JSON SCHEMA:
 }
 `;
 
-  const payload = {
-    contents: [
-      {
-        parts: [
-          { text: promptText }
-        ]
-      }
-    ],
-    generationConfig: {
-      temperature: 0.1,
-      responseMimeType: 'application/json'
-    }
-  };
-
   try {
-    const res = await makeGeminiHttpRequest(apiKey, payload, 10000);
-    if (res.statusCode >= 200 && res.statusCode < 300 && res.data) {
-      const candidates = res.data.candidates;
-      if (Array.isArray(candidates) && candidates.length > 0) {
-        let textContent = candidates[0].content?.parts[0]?.text;
-        if (textContent) {
-          textContent = textContent.trim();
-          if (textContent.startsWith('```')) {
-            textContent = textContent.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-          }
-          const parsed = JSON.parse(textContent);
-          return {
-            keywords: Array.isArray(parsed.keywords) ? parsed.keywords.map(s => String(s).trim()).filter(Boolean) : [],
-            skills: Array.isArray(parsed.skills) ? parsed.skills.map(s => String(s).trim()).filter(Boolean) : [],
-            location: parsed.location ? String(parsed.location).trim() : '',
-            type: (parsed.type && ['job', 'internship', 'research'].includes(String(parsed.type).toLowerCase())) ? String(parsed.type).toLowerCase() : '',
-            remote: typeof parsed.remote === 'boolean' ? parsed.remote : null,
-            company: parsed.company ? String(parsed.company).trim() : '',
-            desiredRoles: Array.isArray(parsed.desiredRoles) ? parsed.desiredRoles.map(s => String(s).trim()).filter(Boolean) : []
-          };
-        }
-      }
-    }
-  } catch (err) {
-    console.warn(`Gemini AI search interpretation warning: ${err.message}. Using heuristic parser fallback.`);
-  }
+    const parsed = await aiProvider.generateJSON(promptText, {
+      temperature: 0.1,
+      systemPrompt: "You are AgentScout AI Job Search Parser."
+    });
 
-  return parseHeuristicQuery(queryText);
+    return {
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords.map(String) : [],
+      skills: Array.isArray(parsed.skills) ? parsed.skills.map(String) : [],
+      location: typeof parsed.location === 'string' ? parsed.location.trim() : '',
+      type: typeof parsed.type === 'string' ? parsed.type.trim() : '',
+      remote: typeof parsed.remote === 'boolean' ? parsed.remote : null,
+      company: typeof parsed.company === 'string' ? parsed.company.trim() : '',
+      desiredRoles: Array.isArray(parsed.desiredRoles) ? parsed.desiredRoles.map(String) : []
+    };
+  } catch (err) {
+    console.warn(`AI Query Parser Warning: ${err.message}. Falling back to heuristic parsing.`);
+    return parseHeuristicQuery(queryText);
+  }
 };
 
 /**

@@ -12,9 +12,7 @@ const OpportunityMonitor = require('../models/OpportunityMonitor.model');
 const OpportunityObservation = require('../models/OpportunityObservation.model');
 const Notification = require('../models/Notification.model');
 const settingsService = require('./settings.service');
-
-const { isGeminiConfigured } = require('../config/gemini');
-const { makeGeminiHttpRequest } = require('./gemini.service');
+const aiProvider = require('./ai/aiProvider');
 
 /**
  * Build unified candidate raw platform state.
@@ -417,26 +415,19 @@ const generateSnapshot = async (userId, refresh = false) => {
     let aiSummary = `You are currently in the ${stage.replace(/_/g, ' ')} stage with a Career Score of ${scoreData.careerScore}/100. Your single highest-impact priority today is: "${nextBestAction.title}".`;
     let aiReasoning = nextBestAction.reason || `Based on platform context evaluation across your candidate profile, ATS score, and pipeline velocity.`;
 
-    if (isGeminiConfigured()) {
-      try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        const prompt = `Write a concise 2-sentence executive career briefing for candidate ${state.user?.firstName || 'Candidate'}.
-        CAREER STAGE: ${stage}
-        CAREER SCORE: ${scoreData.careerScore}/100
-        NEXT BEST ACTION: ${nextBestAction.title}
-        REASON: ${nextBestAction.reason}
-        
-        Keep text highly practical, clear, and encouraging.`;
+    try {
+      const prompt = `Write a concise 2-sentence executive career briefing for candidate ${state.user?.firstName || 'Candidate'}.
+      CAREER STAGE: ${stage}
+      CAREER SCORE: ${scoreData.careerScore}/100
+      NEXT BEST ACTION: ${nextBestAction.title}
+      REASON: ${nextBestAction.reason}
+      
+      Keep text highly practical, clear, and encouraging.`;
 
-        const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2 } };
-        const aiRes = await makeGeminiHttpRequest(apiKey, payload, 8000);
-        if (aiRes.statusCode >= 200 && aiRes.statusCode < 300 && aiRes.data) {
-          const text = aiRes.data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) aiSummary = text.trim();
-        }
-      } catch (err) {
-        // Fallback
-      }
+      const text = await aiProvider.generateText(prompt, { temperature: 0.2, timeoutMs: 10000 });
+      if (text) aiSummary = text;
+    } catch (err) {
+      // Fallback
     }
 
     if (!snapshot) {

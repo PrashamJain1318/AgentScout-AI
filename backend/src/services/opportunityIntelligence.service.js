@@ -4,8 +4,7 @@ const Resume = require('../models/Resume.model');
 const Match = require('../models/Match.model');
 const ApplicationAssistant = require('../models/ApplicationAssistant.model');
 const InterviewSession = require('../models/InterviewSession.model');
-const { isGeminiConfigured } = require('../config/gemini');
-const { makeGeminiHttpRequest } = require('./gemini.service');
+const aiProvider = require('./ai/aiProvider');
 
 /**
  * Evaluate Candidate Fit & Intelligence for a Target Opportunity.
@@ -97,10 +96,8 @@ const evaluateOpportunityFit = async (userId, opportunity) => {
   // 7. Structured AI Explanation
   let aiExplanation = `Your profile aligns ${score}% with ${opportunity.title} at ${opportunity.company}. ${reasons.join(' ')}`;
 
-  if (isGeminiConfigured()) {
-    try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      const prompt = `Provide a concise 2-sentence evidence-based explanation for why candidate ${user?.firstName || 'Candidate'} matches ${opportunity.title} at ${opportunity.company}.
+  try {
+    const prompt = `Provide a concise 2-sentence evidence-based explanation for why candidate ${user?.firstName || 'Candidate'} matches ${opportunity.title} at ${opportunity.company}.
 
 MATCH SCORE: ${score}% (${category})
 MATCHED SKILLS: ${matchedSkills.join(', ') || 'General Engineering'}
@@ -109,15 +106,10 @@ RESUME ATS: ${resume?.scores?.ats || 75}%
 
 Strict Rules: Reference only actual skills above. Keep text professional and markdown formatted.`;
 
-      const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2 } };
-      const aiRes = await makeGeminiHttpRequest(apiKey, payload, 8000);
-      if (aiRes.statusCode >= 200 && aiRes.statusCode < 300 && aiRes.data) {
-        const text = aiRes.data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) aiExplanation = text.trim();
-      }
-    } catch (err) {
-      // Fallback to data-driven explanation
-    }
+    const text = await aiProvider.generateText(prompt, { temperature: 0.2, timeoutMs: 8000 });
+    if (text) aiExplanation = text;
+  } catch (err) {
+    // Fallback to data-driven explanation
   }
 
   return {

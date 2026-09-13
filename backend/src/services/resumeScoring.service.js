@@ -1,5 +1,4 @@
-const { isGeminiConfigured } = require('../config/gemini');
-const { makeGeminiHttpRequest } = require('./gemini.service');
+const aiProvider = require('./ai/aiProvider');
 
 /**
  * Calculate deterministic resume scores, gaps, and ATS recommendations.
@@ -79,8 +78,7 @@ const calculateResumeScores = async (extractedData = {}, rawText = '') => {
     }
   ];
 
-  // Optional Gemini AI suggestions refinement
-  if (isGeminiConfigured() && rawText.length > 50) {
+  if (rawText && rawText.length > 50) {
     try {
       const prompt = `Analyze this resume and provide 3-5 specific ATS and content improvement recommendations as JSON:
       
@@ -100,21 +98,21 @@ const calculateResumeScores = async (extractedData = {}, rawText = '') => {
         }
       ]`;
 
-      const aiRes = await makeGeminiHttpRequest(prompt);
-      const jsonMatch = aiRes.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          suggestions = parsed.map(s => ({
-            category: s.category || 'General',
-            title: s.title || 'Improvement Recommendation',
-            explanation: s.explanation || 'Enhance your resume for higher ATS alignment.',
-            impactLevel: ['high', 'medium', 'low'].includes(s.impactLevel) ? s.impactLevel : 'medium'
-          }));
-        }
+      const parsed = await aiProvider.generateJSON(prompt, {
+        temperature: 0.2,
+        systemPrompt: "You are AgentScout ATS Resume Optimization AI."
+      });
+
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        suggestions = parsed.map(s => ({
+          category: s.category || 'General',
+          title: s.title || 'Improvement Recommendation',
+          explanation: s.explanation || 'Enhance your resume for higher ATS alignment.',
+          impactLevel: ['high', 'medium', 'low'].includes(s.impactLevel) ? s.impactLevel : 'medium'
+        }));
       }
     } catch (err) {
-      console.warn('Gemini scoring suggestions fallback:', err.message);
+      console.warn('AI Resume scoring suggestions warning:', err.message);
     }
   }
 

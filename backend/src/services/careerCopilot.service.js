@@ -2,7 +2,7 @@ const User = require('../models/User.model');
 const Match = require('../models/Match.model');
 const Application = require('../models/Application.model');
 const Opportunity = require('../models/Opportunity.model');
-const geminiService = require('./gemini.service');
+const aiProvider = require('./ai/aiProvider');
 
 /**
  * Build a compact candidate context for Gemini.
@@ -189,7 +189,7 @@ const generateLocalCareerCopilotFallback = (context = {}) => {
 };
 
 /**
- * Generate a personalized AI career plan using Gemini.
+ * Generate a personalized AI career plan using active AI provider.
  */
 const generateCareerCopilotPlan = async (userId, options = {}) => {
   const context = await buildCandidateContext(userId);
@@ -238,7 +238,7 @@ Rules:
 `;
 
   try {
-    const result = await geminiService.generateJSON(prompt, {
+    const result = await aiProvider.generateJSON(prompt, {
       temperature: options.temperature ?? 0.3,
       maxOutputTokens: options.maxOutputTokens ?? 3000
     });
@@ -248,7 +248,7 @@ Rules:
       generatedAt: new Date()
     });
   } catch (err) {
-    console.warn(`Career Copilot Gemini API call warning: ${err.message}. Using safe candidate career plan fallback.`);
+    console.warn(`Career Copilot AI API call warning: ${err.message}. Using safe candidate career plan fallback.`);
     const fallback = generateLocalCareerCopilotFallback(context);
     return normalizeCareerCopilotPlan({
       ...fallback,

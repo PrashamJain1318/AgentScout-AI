@@ -6,8 +6,7 @@ const Match = require('../models/Match.model');
 const Resume = require('../models/Resume.model');
 const Application = require('../models/Application.model');
 const notificationService = require('./notification.service');
-const { isGeminiConfigured } = require('../config/gemini');
-const { makeGeminiHttpRequest } = require('./gemini.service');
+const aiProvider = require('./ai/aiProvider');
 
 const DEFAULT_CHECKLIST_ITEMS = [
   { id: 'resume_rev', label: 'Resume reviewed', completed: false },
@@ -250,47 +249,33 @@ Thank you for considering my application. I look forward to the opportunity to d
 Sincerely,
 ${candidateName}`;
 
-  if (isGeminiConfigured()) {
-    try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      const prompt = `Write a personalized, highly professional cover letter for a candidate applying to a job.
-      
-      CANDIDATE DETAILS:
-      Name: ${candidateName}
-      Skills: ${candidateSkills}
-      Headline: ${user?.profile?.targetRole || user?.profile?.headline || 'Target Role'}
-      
-      JOB DETAILS:
-      Title: ${title}
-      Company: ${company}
-      Location: ${opportunity.location || 'Remote'}
-      Requirements: ${(opportunity.requirements || []).join(', ')}
-      
-      PREFERENCES:
-      Tone: ${tone}
-      Length: ${length}
-      
-      STRICT RULES:
-      - Do NOT invent companies, degrees, metrics, or work experiences not provided.
-      - Keep text clear, professional, and candidate-specific.
-      - Return ONLY the raw cover letter text.`;
+  try {
+    const prompt = `Write a personalized, highly professional cover letter for a candidate applying to a job.
+    
+    CANDIDATE DETAILS:
+    Name: ${candidateName}
+    Skills: ${candidateSkills}
+    Headline: ${user?.profile?.targetRole || user?.profile?.headline || 'Target Role'}
+    
+    JOB DETAILS:
+    Title: ${title}
+    Company: ${company}
+    Location: ${opportunity.location || 'Remote'}
+    Requirements: ${(opportunity.requirements || []).join(', ')}
+    
+    PREFERENCES:
+    Tone: ${tone}
+    Length: ${length}
+    
+    STRICT RULES:
+    - Do NOT invent companies, degrees, metrics, or work experiences not provided.
+    - Keep text clear, professional, and candidate-specific.
+    - Return ONLY the raw cover letter text.`;
 
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3 }
-      };
-
-      const aiRes = await makeGeminiHttpRequest(apiKey, payload, 15000);
-      if (aiRes.statusCode >= 200 && aiRes.statusCode < 300 && aiRes.data) {
-        const candidates = aiRes.data.candidates;
-        if (Array.isArray(candidates) && candidates.length > 0) {
-          const text = candidates[0].content?.parts[0]?.text;
-          if (text) content = text.trim();
-        }
-      }
-    } catch (err) {
-      console.warn('Gemini Cover Letter Fallback:', err.message);
-    }
+    const text = await aiProvider.generateText(prompt, { temperature: 0.3 });
+    if (text) content = text;
+  } catch (err) {
+    console.warn('AI Cover Letter Fallback:', err.message);
   }
 
   assistant.coverLetter = {

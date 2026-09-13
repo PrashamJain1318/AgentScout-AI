@@ -9,8 +9,7 @@ const ApplicationAssistant = require('../models/ApplicationAssistant.model');
 const InterviewSession = require('../models/InterviewSession.model');
 const settingsService = require('./settings.service');
 const notificationService = require('./notification.service');
-const { isGeminiConfigured } = require('../config/gemini');
-const { makeGeminiHttpRequest } = require('./gemini.service');
+const aiProvider = require('./ai/aiProvider');
 
 /**
  * Build complete Candidate Execution Context from all system modules.
@@ -342,25 +341,18 @@ const generatePlan = async (userId, refresh = false) => {
 
     let aiSummary = `Focus today on applying to high-match opportunities and strengthening your technical resume ATS alignment.`;
 
-    if (isGeminiConfigured()) {
-      try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        const prompt = `Write a concise 2-sentence daily career action plan summary for candidate ${context.user?.firstName || 'Candidate'}.
-        CANDIDATE HEADLINE: ${context.profile.headline}
-        ATS SCORE: ${context.resume.atsScore}%
-        NEXT BEST ACTION: ${computed.nextBestAction?.title || 'Apply to roles'}
-        
-        Keep text practical and encouraging.`;
+    try {
+      const prompt = `Write a concise 2-sentence daily career action plan summary for candidate ${context.user?.firstName || 'Candidate'}.
+      CANDIDATE HEADLINE: ${context.profile.headline}
+      ATS SCORE: ${context.resume.atsScore}%
+      NEXT BEST ACTION: ${computed.nextBestAction?.title || 'Apply to roles'}
+      
+      Keep text practical and encouraging.`;
 
-        const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.3 } };
-        const aiRes = await makeGeminiHttpRequest(apiKey, payload, 10000);
-        if (aiRes.statusCode >= 200 && aiRes.statusCode < 300 && aiRes.data) {
-          const text = aiRes.data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) aiSummary = text.trim();
-        }
-      } catch (err) {
-        // Fallback
-      }
+      const text = await aiProvider.generateText(prompt, { temperature: 0.3, timeoutMs: 10000 });
+      if (text) aiSummary = text;
+    } catch (err) {
+      // Fallback
     }
 
     if (!plan) {
