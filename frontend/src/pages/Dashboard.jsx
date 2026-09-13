@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useCareerState } from "../hooks/useCareerState";
 
 import PageTransition from "../components/motion/PageTransition";
 import AdaptiveDashboard from "../components/personalization/AdaptiveDashboard";
@@ -15,54 +16,46 @@ import CareerAgentWidget from "../components/dashboard/CareerAgentWidget";
 import SmartActivityFeed from "../components/dashboard/SmartActivityFeed";
 import CareerIntelligenceWidget from "../components/dashboard/CareerIntelligenceWidget";
 
+import NewUserDashboard from "../components/dashboard/NewUserDashboard";
+
 import { getRecommendedOpportunities } from "../services/opportunities.api";
-import { getApplications } from "../services/applications.api";
 import { getNotifications } from "../services/notifications.api";
-import { getResume } from "../services/resume.api";
-import { getInterviewReadiness } from "../services/interview.api";
-import { getTodayPlan } from "../services/careerPlanner.api";
-import { getMonitor } from "../services/opportunityMonitor.api";
-import { getSnapshot as getOSSnapshot } from "../services/careerOS.api";
-import { getPersonalization, refreshPersonalization } from "../services/personalization.api";
+import { refreshPersonalization } from "../services/personalization.api";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Progressive non-blocking state boundaries
-  const [loading, setLoading] = useState(true);
-  const [personalization, setPersonalization] = useState(null);
+  const {
+    personalization,
+    applications,
+    resumeData,
+    interviewReadiness,
+    plannerData,
+    monitorData,
+    osSnapshot,
+    hasTargetRole,
+    hasResume,
+    hasSkills,
+    firstName,
+    loading: careerStateLoading,
+    refetch
+  } = useCareerState();
+
   const [refreshingPersonalization, setRefreshingPersonalization] = useState(false);
 
   const [recommendations, setRecommendations] = useState([]);
   const [recLoading, setRecLoading] = useState(true);
   const [recError, setRecError] = useState(null);
 
-  const [applications, setApplications] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
   const [actLoading, setActLoading] = useState(true);
-
-  const [resumeData, setResumeData] = useState(null);
-  const [interviewReadiness, setInterviewReadiness] = useState(null);
-  const [plannerData, setPlannerData] = useState(null);
-  const [monitorData, setMonitorData] = useState(null);
-  const [osSnapshot, setOsSnapshot] = useState(null);
-
-  // Individual safe fetchers
-  const fetchPersonalizationData = async () => {
-    try {
-      const res = await getPersonalization();
-      setPersonalization(res?.data || null);
-    } catch (err) {
-      // Non-blocking
-    }
-  };
 
   const handleRefreshPersonalization = async () => {
     setRefreshingPersonalization(true);
     try {
-      const res = await refreshPersonalization();
-      setPersonalization(res?.data || null);
+      await refreshPersonalization();
+      await refetch();
     } catch (err) {
       // Non-blocking
     } finally {
@@ -71,6 +64,7 @@ const Dashboard = () => {
   };
 
   const fetchRecommendations = async () => {
+    if (!user) return;
     setRecLoading(true);
     setRecError(null);
     try {
@@ -84,17 +78,8 @@ const Dashboard = () => {
     }
   };
 
-  const fetchApplications = async () => {
-    try {
-      const resData = await getApplications();
-      const list = resData?.applications || resData?.data || resData || [];
-      setApplications(Array.isArray(list) ? list : []);
-    } catch (err) {
-      // Non-blocking
-    }
-  };
-
   const fetchRecentActivities = async () => {
+    if (!user) return;
     setActLoading(true);
     try {
       const resData = await getNotifications({ page: 1, limit: 4 });
@@ -107,129 +92,92 @@ const Dashboard = () => {
     }
   };
 
-  const fetchResumeHealth = async () => {
-    try {
-      const resData = await getResume();
-      setResumeData(resData?.resume || null);
-    } catch (err) {
-      // Non-blocking
-    }
-  };
-
-  const fetchInterviewData = async () => {
-    try {
-      const res = await getInterviewReadiness();
-      setInterviewReadiness(res?.data || null);
-    } catch (err) {
-      // Non-blocking
-    }
-  };
-
-  const fetchPlanner = async () => {
-    try {
-      const res = await getTodayPlan();
-      setPlannerData(res?.data || null);
-    } catch (err) {
-      // Non-blocking
-    }
-  };
-
-  const fetchMonitorData = async () => {
-    try {
-      const res = await getMonitor();
-      setMonitorData(res?.data || null);
-    } catch (err) {
-      // Non-blocking
-    }
-  };
-
-  const fetchOS = async () => {
-    try {
-      const res = await getOSSnapshot();
-      setOsSnapshot(res?.data || null);
-    } catch (err) {
-      // Non-blocking
-    }
-  };
-
   useEffect(() => {
-    // Parallel non-blocking execution using Promise.allSettled
-    Promise.allSettled([
-      fetchPersonalizationData(),
-      fetchRecommendations(),
-      fetchApplications(),
-      fetchRecentActivities(),
-      fetchResumeHealth(),
-      fetchInterviewData(),
-      fetchPlanner(),
-      fetchMonitorData(),
-      fetchOS(),
-    ]).finally(() => {
-      setLoading(false);
-    });
-  }, []);
+    if (user) {
+      fetchRecommendations();
+      fetchRecentActivities();
+    } else {
+      setRecommendations([]);
+      setRecentActivities([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const isNewUser = !hasTargetRole && !hasResume && applications.length === 0;
 
   return (
     <PageTransition className="dashboard-clean-container">
-      <AdaptiveDashboard
-        user={user}
-        personalization={personalization}
-        onRefresh={handleRefreshPersonalization}
-        refreshing={refreshingPersonalization}
-        onNavigate={navigate}
-      >
-        {/* 2. QUICK ACTIONS ROW */}
-        <QuickActions onNavigate={navigate} />
-
-        {/* 3. CAREER READINESS HERO */}
-        <CareerReadinessHero osSnapshot={osSnapshot} onNavigate={navigate} />
-
-        {/* 4. NEXT BEST ACTION (DOMINANT CARD) */}
-        <NextBestAction
-          osSnapshot={osSnapshot}
-          plannerData={plannerData}
+      {isNewUser ? (
+        <NewUserDashboard
+          user={user}
+          firstName={firstName}
+          hasTargetRole={hasTargetRole}
+          hasResume={hasResume}
+          hasSkills={hasSkills}
           onNavigate={navigate}
         />
-
-        {/* 5. CAREER HEALTH SNAPSHOT (5-CARD GRID) */}
-        <CareerHealthSnapshot
-          osSnapshot={osSnapshot}
-          resumeData={resumeData}
-          applicationsCount={applications.length}
-          interviewReadiness={interviewReadiness}
+      ) : (
+        <AdaptiveDashboard
+          user={user}
+          personalization={personalization}
+          onRefresh={handleRefreshPersonalization}
+          refreshing={refreshingPersonalization}
           onNavigate={navigate}
-        />
+        >
+          {/* 2. QUICK ACTIONS ROW */}
+          <QuickActions onNavigate={navigate} />
 
-        {/* 5.5 CAREER INTELLIGENCE PROACTIVE WIDGET */}
-        <CareerIntelligenceWidget onNavigate={navigate} />
+          {/* 3. CAREER READINESS HERO */}
+          <CareerReadinessHero osSnapshot={osSnapshot} onNavigate={navigate} />
 
-        {/* 6. TOP 3 OPPORTUNITIES */}
-        <TopOpportunities
-          recommendations={recommendations}
-          loading={recLoading}
-          error={recError}
-          onNavigate={navigate}
-        />
-
-        {/* 7. SPLIT SECTION — TODAY'S PLAN & AI CAREER AGENT */}
-        <div className="db-split-grid">
-          <TodayCareerPlan plannerData={plannerData} onNavigate={navigate} />
-          <CareerAgentWidget
+          {/* 4. NEXT BEST ACTION (DOMINANT CARD) */}
+          <NextBestAction
             osSnapshot={osSnapshot}
-            monitorData={monitorData}
+            plannerData={plannerData}
             onNavigate={navigate}
           />
-        </div>
 
-        {/* 8. SMART ACTIVITY FEED */}
-        <SmartActivityFeed
-          recentActivities={recentActivities}
-          loading={actLoading}
-          onNavigate={navigate}
-        />
-      </AdaptiveDashboard>
+          {/* 5. CAREER HEALTH SNAPSHOT (5-CARD GRID) */}
+          <CareerHealthSnapshot
+            osSnapshot={osSnapshot}
+            resumeData={resumeData}
+            applicationsCount={applications.length}
+            interviewReadiness={interviewReadiness}
+            onNavigate={navigate}
+          />
+
+          {/* 5.5 CAREER INTELLIGENCE PROACTIVE WIDGET */}
+          <CareerIntelligenceWidget onNavigate={navigate} />
+
+          {/* 6. TOP 3 OPPORTUNITIES */}
+          <TopOpportunities
+            recommendations={recommendations}
+            loading={recLoading}
+            error={recError}
+            onNavigate={navigate}
+          />
+
+          {/* 7. SPLIT SECTION — TODAY'S PLAN & AI CAREER AGENT */}
+          <div className="db-split-grid">
+            <TodayCareerPlan plannerData={plannerData} onNavigate={navigate} />
+            <CareerAgentWidget
+              osSnapshot={osSnapshot}
+              monitorData={monitorData}
+              onNavigate={navigate}
+            />
+          </div>
+
+          {/* 8. SMART ACTIVITY FEED */}
+          <SmartActivityFeed
+            recentActivities={recentActivities}
+            loading={actLoading}
+            onNavigate={navigate}
+          />
+        </AdaptiveDashboard>
+      )}
     </PageTransition>
   );
 };
 
 export default Dashboard;
+

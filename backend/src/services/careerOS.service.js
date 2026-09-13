@@ -66,16 +66,16 @@ const buildRawPlatformState = async (userId) => {
   profileScore = Math.min(100, profileScore);
 
   // Resume Score (0-100)
-  const resumeAtsScore = resume?.scores?.ats || 0;
-  const resumeCompleteness = resume?.scores?.completeness || (resume ? 75 : 0);
-  const resumeSkillsCoverage = resume?.scores?.skillsCoverage || (resume ? 70 : 0);
-  const resumeQuality = resumeAtsScore > 0 ? resumeAtsScore : (resume ? 65 : 0);
+  const resumeAtsScore = resume?.scores?.ats || null;
+  const resumeCompleteness = resume?.scores?.completeness || null;
+  const resumeSkillsCoverage = resume?.scores?.skillsCoverage || null;
+  const resumeQuality = resumeAtsScore > 0 ? resumeAtsScore : null;
 
   // Opportunity Fit (0-100)
   const totalMatches = matches.length;
   const excellentMatches = matches.filter(m => (m.score >= 90 || m.matchLevel === 'excellent'));
   const strongMatches = matches.filter(m => (m.score >= 75 && m.score < 90));
-  const avgMatchScore = totalMatches > 0 ? Math.round(matches.reduce((a, m) => a + (m.score || 0), 0) / totalMatches) : 70;
+  const avgMatchScore = totalMatches > 0 ? Math.round(matches.reduce((a, m) => a + (m.score || 0), 0) / totalMatches) : null;
 
   // Skill Gaps & Coverage
   const missingSkillCounts = {};
@@ -88,7 +88,7 @@ const buildRawPlatformState = async (userId) => {
     }
   });
   const criticalGaps = Object.keys(missingSkillCounts).sort((a, b) => missingSkillCounts[b] - missingSkillCounts[a]).slice(0, 5);
-  const skillCoverage = allSkills.length > 0 ? Math.min(100, Math.round((allSkills.length / (allSkills.length + criticalGaps.length || 1)) * 100)) : 40;
+  const skillCoverage = allSkills.length > 0 ? Math.min(100, Math.round((allSkills.length / (allSkills.length + criticalGaps.length || 1)) * 100)) : null;
 
   // Application Pipeline Metrics
   const totalApps = applications.length;
@@ -104,7 +104,7 @@ const buildRawPlatformState = async (userId) => {
   const latestMockScore = mockAttempts > 0 ? (interviews[0].overallScore || 0) : 0;
   const interviewReadinessScore = mockAttempts > 0
     ? Math.round(interviews.reduce((a, s) => a + (s.readinessScore || 0), 0) / mockAttempts)
-    : 70;
+    : null;
 
   // Portfolio Strength (0-100)
   const hasPortfolioUrl = Boolean(profile.portfolioUrl || resume?.portfolio?.portfolioUrl);
@@ -154,26 +154,32 @@ const buildRawPlatformState = async (userId) => {
 const calculateCareerScore = (state) => {
   const breakdown = {
     profile: Math.min(100, Math.max(0, state.profileScore)),
-    resume: Math.min(100, Math.max(0, state.resumeQuality)),
-    opportunityFit: Math.min(100, Math.max(0, state.avgMatchScore)),
+    resume: state.resumeQuality,
+    opportunityFit: state.avgMatchScore,
     applications: Math.min(100, Math.max(0, state.appPipelineScore)),
-    interview: Math.min(100, Math.max(0, state.interviewReadinessScore)),
-    skills: Math.min(100, Math.max(0, state.skillCoverage)),
+    interview: state.interviewReadinessScore,
+    skills: state.skillCoverage,
     portfolio: Math.min(100, Math.max(0, state.portfolioScore))
   };
 
-  const weightedScore = Math.round(
-    (breakdown.profile * 0.10) +
-    (breakdown.resume * 0.15) +
-    (breakdown.opportunityFit * 0.20) +
-    (breakdown.applications * 0.15) +
-    (breakdown.interview * 0.15) +
-    (breakdown.skills * 0.15) +
-    (breakdown.portfolio * 0.10)
-  );
+  const isNewUser = state.profileScore === 0 && !state.resumeQuality && state.totalApps === 0 && state.mockAttempts === 0;
+
+  let weightedScore = null;
+  if (!isNewUser) {
+    weightedScore = Math.round(
+      ((breakdown.profile || 0) * 0.10) +
+      ((breakdown.resume || 0) * 0.15) +
+      ((breakdown.opportunityFit || 0) * 0.20) +
+      ((breakdown.applications || 0) * 0.15) +
+      ((breakdown.interview || 0) * 0.15) +
+      ((breakdown.skills || 0) * 0.15) +
+      ((breakdown.portfolio || 0) * 0.10)
+    );
+    weightedScore = Math.min(100, Math.max(0, weightedScore));
+  }
 
   return {
-    careerScore: Math.min(100, Math.max(0, weightedScore)),
+    careerScore: weightedScore,
     breakdown
   };
 };
@@ -272,13 +278,13 @@ const detectCareerRisks = (state) => {
  */
 const calculateCareerMomentum = (state) => {
   const activeCount = state.totalApps + state.mockAttempts + (state.actionPlan?.dailyActions?.length || 0);
-  const score = Math.min(100, Math.max(30, 50 + (activeCount * 8)));
+  const score = activeCount > 0 ? Math.min(100, Math.max(30, 50 + (activeCount * 8))) : 0;
   const trend = activeCount >= 4 ? 'UP' : activeCount >= 2 ? 'STABLE' : 'DOWN';
 
   return {
     score,
     trend,
-    changePercentage: activeCount >= 4 ? 25 : activeCount >= 2 ? 0 : -15
+    changePercentage: activeCount >= 4 ? 25 : activeCount >= 2 ? 0 : 0
   };
 };
 
@@ -297,16 +303,6 @@ const aggregateRecentChanges = (state) => {
         timestamp: n.createdAt || new Date(),
         icon: n.type === 'excellent_match' ? 'sparkles' : 'bell'
       });
-    });
-  }
-
-  if (changes.length === 0) {
-    changes.push({
-      type: 'system',
-      title: 'AgentScout Monitoring Active',
-      description: 'Career Operating System is actively monitoring target opportunities and application progress.',
-      timestamp: new Date(),
-      icon: 'activity'
     });
   }
 

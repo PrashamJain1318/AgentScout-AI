@@ -66,9 +66,9 @@ const buildUserCareerContext = async (userId) => {
 
   const profile = user ? (user.profile || {}) : {};
   const candidateSkills = Array.isArray(profile.skills) ? profile.skills : (Array.isArray(user?.skills) ? user.skills : []);
-  const headline = profile.headline || 'Software Engineer Candidate';
+  const headline = profile.headline || null;
   const bio = profile.bio || profile.biography || '';
-  const location = profile.location || 'Remote';
+  const location = profile.location || null;
   const preferences = profile.preferences || {};
 
   // Missing skills aggregation
@@ -106,7 +106,7 @@ const buildUserCareerContext = async (userId) => {
   const latestInterviewScore = totalInterviews > 0 ? (sessionsList[0].overallScore || 0) : 0;
   const avgInterviewReadiness = totalInterviews > 0
     ? Math.round(sessionsList.reduce((a, s) => a + (s.readinessScore || 0), 0) / totalInterviews)
-    : 75;
+    : null;
 
   const obsList = Array.isArray(observations) ? observations.filter(o => o.opportunity) : [];
   const excellentObs = obsList.filter(o => o.highestMatchScore >= 90);
@@ -313,7 +313,7 @@ const generateLocalChatFallback = (message = '', context = {}) => {
 
   if (msg.includes('career score') || msg.includes('score low') || msg.includes('os')) {
     const breakdown = cos.readiness || {};
-    return `### AgentScout Career Operating System Intelligence\n\n- **Composite Career Health Score:** **${cos.careerScore || 75}/100**\n- **Current Career Stage:** **${(cos.careerStage || 'APPLICATION_READY').replace(/_/g, ' ')}**\n- **Momentum:** **${cos.momentum?.score || 50}/100 (${cos.momentum?.trend || 'STABLE'})**\n\n### Score Breakdown:\n- Profile: **${breakdown.profile || 80}%** | Resume: **${breakdown.resume || 75}%**\n- Opportunity Fit: **${breakdown.opportunityFit || 85}%** | Applications: **${breakdown.applications || 50}%**\n- Interview: **${breakdown.interview || 75}%** | Skills: **${breakdown.skills || 70}%**\n\nView complete strategic command center on [Career OS](/dashboard/career-os).`;
+    return `### AgentScout Career Operating System Intelligence\n\n- **Composite Career Health Score:** **${cos.careerScore ?? 'N/A'}/100**\n- **Current Career Stage:** **${(cos.careerStage || 'APPLICATION_READY').replace(/_/g, ' ')}**\n- **Momentum:** **${cos.momentum?.score ?? 0}/100 (${cos.momentum?.trend || 'STABLE'})**\n\n### Score Breakdown:\n- Profile: **${breakdown.profile ?? 0}%** | Resume: **${breakdown.resume ?? 0}%**\n- Opportunity Fit: **${breakdown.opportunityFit ?? 0}%** | Applications: **${breakdown.applications ?? 0}%**\n- Interview: **${breakdown.interview ?? 0}%** | Skills: **${breakdown.skills ?? 0}%**\n\nView complete strategic command center on [Career OS](/dashboard/career-os).`;
   }
 
   if (msg.includes('new job') || msg.includes('find') || msg.includes('monitor') || msg.includes('discovered')) {
@@ -327,11 +327,11 @@ const generateLocalChatFallback = (message = '', context = {}) => {
   }
 
   if (msg.includes('interview') || msg.includes('ready')) {
-    return `### AgentScout AI Interview Readiness Intelligence\n\n- **Completed Mock Sessions:** **${ii.totalCompleted || 0}**\n- **Latest Mock Score:** **${ii.latestScore || 0}%**\n- **Interview Readiness Score:** **${ii.averageReadinessScore || 75}%**\n\n### Recommendation:\nUse the [AI Interview Coach](/dashboard/interview-coach) to practice role-specific technical and STAR behavioral questions before your upcoming interviews.`;
+    return `### AgentScout AI Interview Readiness Intelligence\n\n- **Completed Mock Sessions:** **${ii.totalCompleted || 0}**\n- **Latest Mock Score:** **${ii.latestScore || 0}%**\n- **Interview Readiness Score:** **${ii.averageReadinessScore ?? 'N/A'}%**\n\n### Recommendation:\nUse the [AI Interview Coach](/dashboard/interview-coach) to practice role-specific technical and STAR behavioral questions before your upcoming interviews.`;
   }
 
   if (msg.includes('apply') || msg.includes('readiness') || msg.includes('cover letter')) {
-    return `### AgentScout Application Readiness Intelligence\n\n- **Prepared Applications:** **${aa.totalPrepared || 0}**\n- **Average Readiness Score:** **${aa.averageReadinessScore || 80}%**\n\n### Recommendation:\nUse the [AI Application Assistant](/dashboard/application-assistant) to generate company-specific cover letters, answer custom job questions, and review your application readiness score before applying.`;
+    return `### AgentScout Application Readiness Intelligence\n\n- **Prepared Applications:** **${aa.totalPrepared || 0}**\n- **Average Readiness Score:** **${aa.averageReadinessScore ?? 'N/A'}%**\n\n### Recommendation:\nUse the [AI Application Assistant](/dashboard/application-assistant) to generate company-specific cover letters, answer custom job questions, and review your application readiness score before applying.`;
   }
 
   if (msg.includes('resume') || msg.includes('ats')) {
@@ -345,7 +345,7 @@ const generateLocalChatFallback = (message = '', context = {}) => {
     return `Based on your profile skills (${skillsStr}) and market demand across your matched opportunities, your top recommended skills to learn next are **${missingStr}**.\n\n### Learning Action Plan:\n1. **Focus Skill:** Learn ${m.topMissingSkills?.[0] || 'TypeScript'} to increase your high-match role eligibility.\n2. **Hands-on Practice:** Build a full-stack project incorporating ${c.skills?.[0] || 'React'} with ${m.topMissingSkills?.[0] || 'cloud deployment'}.\n3. **Portfolio Alignment:** Update your AgentScout profile once completed to automatically boost your AI match scores.`;
   }
 
-  return `Hello ${c.name}! I am your AgentScout AI Career Copilot.\n\nBased on your profile (**${c.headline}**) with skills in **${skillsStr}**, your composite Career Health Score is **${cos.careerScore || 75}/100**. You currently have **${m.total || 0} AI matches** with an average match score of **${m.averageScore || 70}%**.\n\nHow can I assist your career progression today? Try asking:\n- *"What should I do now?"*\n- *"Why is my career score low?"*\n- *"What new jobs did you find?"*\n- *"Am I ready for my interview?"*`;
+  return `Hello ${c.name}! I am your AgentScout AI Career Copilot.\n\nBased on your profile (**${c.headline || 'No Target Role'}**) with skills in **${skillsStr}**, your composite Career Health Score is **${cos.careerScore ?? 'N/A'}/100**. You currently have **${m.total || 0} AI matches** with an average match score of **${m.averageScore ?? 'N/A'}%**.\n\nHow can I assist your career progression today? Try asking:\n- *"What should I do now?"*\n- *"Why is my career score low?"*\n- *"What new jobs did you find?"*\n- *"Am I ready for my interview?"*`;
 };
 
 const getSkillGapAnalysis = async (userId) => {

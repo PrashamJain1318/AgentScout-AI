@@ -34,6 +34,13 @@ export const useCareerState = () => {
 
     setLoading(true);
     setError(null);
+    setResumeData(null);
+    setApplications([]);
+    setInterviewReadiness(null);
+    setPlannerData(null);
+    setMonitorData(null);
+    setOsSnapshot(null);
+    setPersonalization(null);
 
     const results = await Promise.allSettled([
       getResume(),

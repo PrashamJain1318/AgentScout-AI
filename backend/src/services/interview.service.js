@@ -68,13 +68,13 @@ const buildInterviewContext = async (userId, opportunityId = null) => {
   return {
     candidate: {
       name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Candidate',
-      headline: user?.profile?.headline || 'Software Engineer',
+      headline: user?.profile?.headline || null,
       skills: allSkills,
       experience,
       projects,
       portfolioUrl: resume?.portfolio?.portfolioUrl || user?.profile?.portfolioUrl || '',
       githubUrl: resume?.portfolio?.githubUrl || user?.profile?.githubUrl || '',
-      atsScore: resume?.scores?.ats || 75
+      atsScore: resume?.scores?.ats || null
     },
     opportunity: opportunity ? {
       id: opportunity._id,
@@ -86,12 +86,12 @@ const buildInterviewContext = async (userId, opportunityId = null) => {
       description: opportunity.description || ''
     } : null,
     match: {
-      score: match?.score || 75,
+      score: match?.score || null,
       matchedSkills,
       missingSkills
     },
     assistant: {
-      readinessScore: assistant?.readinessScore || 70,
+      readinessScore: assistant?.readinessScore || null,
       gaps: assistant?.gaps || []
     },
     historySessions
@@ -540,24 +540,24 @@ const getInterviewReadiness = async (userId, opportunityId = null) => {
 
   const context = await buildInterviewContext(userId, opportunityId);
 
-  let readinessScore = 75;
-  let latestScore = 0;
-  let techAvg = 75;
-  let behAvg = 80;
-  let commAvg = 82;
-  let probAvg = 78;
-  let resAvg = 80;
+  let readinessScore = null;
+  let latestScore = null;
+  let techAvg = null;
+  let behAvg = null;
+  let commAvg = null;
+  let probAvg = null;
+  let resAvg = null;
 
   if (sessions.length > 0) {
-    latestScore = sessions[0].overallScore || 75;
+    latestScore = sessions[0].overallScore || 0;
     const avgScoreSum = sessions.reduce((acc, s) => acc + (s.overallScore || 0), 0);
     readinessScore = Math.round(avgScoreSum / sessions.length);
 
-    techAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.technical || 75), 0) / sessions.length);
-    behAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.behavioral || 80), 0) / sessions.length);
-    commAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.communication || 82), 0) / sessions.length);
-    probAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.problemSolving || 78), 0) / sessions.length);
-    resAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.resumeKnowledge || 80), 0) / sessions.length);
+    techAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.technical || 0), 0) / sessions.length);
+    behAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.behavioral || 0), 0) / sessions.length);
+    commAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.communication || 0), 0) / sessions.length);
+    probAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.problemSolving || 0), 0) / sessions.length);
+    resAvg = Math.round(sessions.reduce((a, s) => a + (s.categoryScores?.resumeKnowledge || 0), 0) / sessions.length);
   }
 
   const recommendations = [
