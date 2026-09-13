@@ -91,13 +91,13 @@ const buildCandidateExecutionContext = async (userId) => {
   const latestMockScore = completedMocks > 0 ? (interviews[0].overallScore || 0) : 0;
   const avgInterviewReadiness = completedMocks > 0
     ? Math.round(interviews.reduce((a, s) => a + (s.readinessScore || 0), 0) / completedMocks)
-    : 75;
+    : 0;
 
   return {
     user,
     profile: {
       completionScore: profileScore,
-      headline: profile.headline || 'Software Engineer',
+      headline: profile.headline || '',
       skills: allSkills,
       hasPortfolio: Boolean(profile.portfolioUrl || resume?.portfolio?.portfolioUrl),
       hasGithub: Boolean(profile.githubUrl || resume?.portfolio?.githubUrl)

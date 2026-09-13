@@ -298,10 +298,10 @@ const findOrCreateSocialUser = async (oauthData) => {
       }
     },
     profile: {
-      headline: `${firstName} ${lastName} — Candidate`,
+      headline: '',
       github: provider === 'github' && username ? `https://github.com/${username}` : '',
       preferences: {
-        desiredRoles: ['Software Engineer'],
+        desiredRoles: [],
         preferredLocations: ['Remote'],
         jobTypes: ['Full-time'],
         workModes: ['Remote', 'Hybrid']

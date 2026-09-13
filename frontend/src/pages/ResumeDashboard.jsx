@@ -90,56 +90,50 @@ const ResumeDashboard = () => {
         onDeleted={() => setResumeData(null)}
       />
 
-      {/* 2. Score Metrics Cards (If Resume Uploaded) */}
+      {/* 2. Premium Score Hero (If Resume Uploaded) */}
       {resumeData && (
-        <div className="kpi-grid resume-kpi-grid">
-          <div className="kpi-card">
-            <div className="kpi-icon-wrapper match-icon">
-              <Sparkles size={20} />
+        <div className="resume-score-hero">
+          <div className="resume-score-hero-row">
+            <div className="score-display-block">
+              <div className="score-circle-large">
+                {scores.overall}
+              </div>
+              <div className="score-text-content">
+                <h3>{scores.overall >= 80 ? "Excellent" : scores.overall >= 60 ? "Strong" : "Needs Improvement"} Resume Score</h3>
+                <p>
+                  Your resume has been analyzed across multiple ATS dimensions. 
+                  {resumeData.suggestions && resumeData.suggestions.length > 0 
+                    ? ` Here are ${resumeData.suggestions.length} recommendations to improve your match rate.` 
+                    : " Great job! Your resume is highly optimized."}
+                </p>
+              </div>
             </div>
-            <div className="kpi-content">
-              <span className="kpi-label">Overall Score</span>
-              <strong className="kpi-value text-primary">{scores.overall}%</strong>
-            </div>
+            {/* Optional AI Summary Badge or Quick Action here */}
+            <button 
+              className="primary-action-btn"
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+            >
+              <Sparkles size={16} />
+              <span>View All Insights</span>
+            </button>
           </div>
 
-          <div className="kpi-card">
-            <div className="kpi-icon-wrapper offer-icon">
-              <FileText size={20} />
+          <div className="resume-kpi-row">
+            <div className="resume-kpi-item">
+              <span className="resume-kpi-label">ATS Match</span>
+              <strong className="resume-kpi-value text-success">{scores.ats}%</strong>
             </div>
-            <div className="kpi-content">
-              <span className="kpi-label">AgentScout ATS Score</span>
-              <strong className="kpi-value text-success">{scores.ats}%</strong>
+            <div className="resume-kpi-item">
+              <span className="resume-kpi-label">Completeness</span>
+              <strong className="resume-kpi-value">{scores.completeness}%</strong>
             </div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-icon-wrapper app-icon">
-              <Sparkles size={20} />
+            <div className="resume-kpi-item">
+              <span className="resume-kpi-label">Impact</span>
+              <strong className="resume-kpi-value">{scores.impact}%</strong>
             </div>
-            <div className="kpi-content">
-              <span className="kpi-label">Completeness Score</span>
-              <strong className="kpi-value">{scores.completeness}%</strong>
-            </div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-icon-wrapper interview-icon">
-              <Sparkles size={20} />
-            </div>
-            <div className="kpi-content">
-              <span className="kpi-label">Impact Score</span>
-              <strong className="kpi-value">{scores.impact}%</strong>
-            </div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-icon-wrapper search-icon">
-              <Sparkles size={20} />
-            </div>
-            <div className="kpi-content">
-              <span className="kpi-label">Skills Coverage</span>
-              <strong className="kpi-value">{scores.skillsCoverage}%</strong>
+            <div className="resume-kpi-item">
+              <span className="resume-kpi-label">Skills Coverage</span>
+              <strong className="resume-kpi-value">{scores.skillsCoverage}%</strong>
             </div>
           </div>
         </div>

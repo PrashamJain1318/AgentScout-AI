@@ -56,10 +56,10 @@ const TopOpportunities = ({ recommendations, loading, error, onNavigate }) => {
       ) : (
         <StaggerContainer className="db-opps-cards-grid" staggerDelay={0.06}>
           {topList.map((opp) => {
-            const title = opp.title || opp.jobTitle || "Software Engineer";
-            const company = opp.company || opp.companyName || "Technology Partner";
+            const title = opp.title || opp.jobTitle || "Opportunity";
+            const company = opp.company || opp.companyName || "Company";
             const location = opp.location || opp.workplaceType || "Remote";
-            const matchScore = opp.matchScore || opp.score || 88;
+            const matchScore = opp.matchScore ?? opp.score ?? null;
 
             return (
               <StaggerItem key={opp._id || opp.id || title}>
@@ -67,7 +67,11 @@ const TopOpportunities = ({ recommendations, loading, error, onNavigate }) => {
                   <div className="db-opp-card-header">
                     <div className="db-opp-match-badge">
                       <Sparkles size={12} />
-                      <AnimatedNumber value={matchScore} suffix="% Match" duration={600} />
+                      {typeof matchScore === "number" ? (
+                        <AnimatedNumber value={matchScore} suffix="% Match" duration={600} />
+                      ) : (
+                        <span>Match N/A</span>
+                      )}
                     </div>
                     <span className="db-opp-location">
                       <MapPin size={12} />

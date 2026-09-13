@@ -4,12 +4,13 @@ import MotionButton from "../motion/MotionButton";
 import AnimatedNumber from "../motion/AnimatedNumber";
 
 const CareerAgentWidget = ({ osSnapshot, monitorData, onNavigate }) => {
-  const agentStatus = osSnapshot?.agentState?.status || "ACTIVE";
-  const agentMode = osSnapshot?.agentState?.mode || "AUTONOMOUS";
-  const pendingActions = osSnapshot?.actionState?.pendingActionsCount || 3;
-  const recentNote =
-    osSnapshot?.agentState?.lastActivityNote ||
-    "Agent monitored 14 new postings & matched 3 high-priority opportunities today.";
+  const isAgentConfigured = Boolean(osSnapshot?.agentState && osSnapshot?.agentState?.lastActivityNote);
+  const agentStatus = isAgentConfigured ? (osSnapshot?.agentState?.status || "ACTIVE") : "IDLE";
+  const agentMode = osSnapshot?.agentState?.mode || "ASSISTED";
+  const pendingActions = osSnapshot?.actionState?.pendingActionsCount ?? 0;
+  const recentNote = osSnapshot?.agentState?.lastActivityNote || "Your Career Agent is waiting for your career profile.";
+  const matchPrecision = osSnapshot?.agentState?.precision ?? null;
+  const monitoredCount = monitorData?.recommendations?.length ?? 0;
 
   return (
     <section className="db-agent-widget-card">
@@ -46,30 +47,38 @@ const CareerAgentWidget = ({ osSnapshot, monitorData, onNavigate }) => {
       <div className="db-agent-widget-body">
         <p className="db-agent-note">"{recentNote}"</p>
 
-        <div className="db-agent-metrics-row">
-          <div className="db-agent-stat">
-            <AnimatedNumber value={pendingActions} className="stat-value" />
-            <span className="stat-label">Pending Actions</span>
-          </div>
+        {isAgentConfigured ? (
+          <div className="db-agent-metrics-row">
+            <div className="db-agent-stat">
+              <AnimatedNumber value={pendingActions} className="stat-value" />
+              <span className="stat-label">Pending Actions</span>
+            </div>
 
-          <div className="db-agent-stat">
-            <span className="stat-value">94.2%</span>
-            <span className="stat-label">Match Precision</span>
-          </div>
+            <div className="db-agent-stat">
+              <span className="stat-value">{matchPrecision !== null ? `${matchPrecision}%` : "N/A"}</span>
+              <span className="stat-label">Match Precision</span>
+            </div>
 
-          <div className="db-agent-stat">
-            <span className="stat-value">24/7</span>
-            <span className="stat-label">Active Monitoring</span>
+            <div className="db-agent-stat">
+              <span className="stat-value">{monitoredCount > 0 ? monitoredCount : "0"}</span>
+              <span className="stat-label">Monitored Roles</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="p-3 text-center rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800 my-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+              Set target role to activate autonomous opportunity tracking.
+            </p>
+          </div>
+        )}
       </div>
 
       <MotionButton
         className="db-agent-full-cta"
-        onClick={() => onNavigate("/dashboard/agent")}
+        onClick={() => onNavigate(isAgentConfigured ? "/dashboard/agent" : "/dashboard/profile")}
       >
         <Zap size={14} />
-        <span>Open AI Agent Control Center</span>
+        <span>{isAgentConfigured ? "Open AI Agent Control Center" : "Complete Profile"}</span>
         <ArrowRight size={14} />
       </MotionButton>
     </section>

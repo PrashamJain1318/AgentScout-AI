@@ -92,7 +92,7 @@ const ProfileSummaryCard = ({ initialData = null }) => {
   const email = userData?.email || "N/A";
 
   const p = userData?.profile || {};
-  const headline = p.headline || p.targetRole || "Software Engineer / Candidate";
+  const headline = p.headline || p.targetRole || "Career Profile Incomplete";
   const location = p.location || "Location not set";
   const bio = p.bio || p.biography || "";
   const skills = Array.isArray(p.skills) ? p.skills : [];

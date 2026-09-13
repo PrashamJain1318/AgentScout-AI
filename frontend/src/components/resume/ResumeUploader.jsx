@@ -171,21 +171,29 @@ const ResumeUploader = ({ currentResume, onUploaded, onDeleted }) => {
           </div>
         </div>
       ) : (
-        <div
-          className={`dropzone-box ${dragActive ? "drag-active" : ""}`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <UploadCloud size={40} className="upload-icon text-primary" />
-          <h4>Drag & Drop your Resume here</h4>
-          <p className="notif-subtext">Supports PDF or DOCX documents (Maximum 10 MB)</p>
+        <div className="resume-uploader-empty">
+          <div style={{ textAlign: "center", marginBottom: "24px" }}>
+            <h3 style={{ margin: "0 0 8px 0", fontSize: "20px", fontWeight: "800" }}>Your next opportunity starts with a stronger resume.</h3>
+            <p className="notif-subtext" style={{ margin: 0, fontSize: "14px", maxWidth: "500px", marginInline: "auto" }}>
+              Upload your resume to unlock AI analysis, ATS insights, skill extraction, opportunity matching, and personalized recommendations.
+            </p>
+          </div>
+          <div
+            className={`dropzone-box ${dragActive ? "drag-active" : ""}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <UploadCloud size={40} className="upload-icon text-primary" style={{ color: "var(--accent-purple)" }} />
+            <h4 style={{ margin: "4px 0 0 0", fontSize: "16px", fontWeight: "700" }}>Drag & Drop your Resume here</h4>
+            <p className="notif-subtext" style={{ margin: 0, fontSize: "13px" }}>Supports PDF or DOCX documents (Maximum 10 MB)</p>
 
-          <button type="button" className="primary-action-btn" disabled={uploading}>
-            {uploading ? "Parsing & Scoring Resume..." : "Browse File"}
-          </button>
+            <button type="button" className="primary-action-btn" disabled={uploading} style={{ marginTop: "16px", padding: "10px 20px" }}>
+              {uploading ? "Analyzing Resume..." : "Upload Resume"}
+            </button>
+          </div>
         </div>
       )}
 

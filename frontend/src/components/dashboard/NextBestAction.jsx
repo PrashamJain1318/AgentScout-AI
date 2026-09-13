@@ -3,21 +3,74 @@ import { Target, Clock, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
 import MotionCard from "../motion/MotionCard";
 import MotionButton from "../motion/MotionButton";
 
-const NextBestAction = ({ osSnapshot, plannerData, onNavigate }) => {
-  const rawAction =
-    osSnapshot?.actionState?.nextBestAction ||
-    plannerData?.nextBestAction ||
-    null;
+const getDerivedAction = (osSnapshot, plannerData, user, resumeData, applicationsCount) => {
+  const rawAction = osSnapshot?.actionState?.nextBestAction || plannerData?.nextBestAction;
+  if (rawAction?.title) {
+    return {
+      title: rawAction.title,
+      description: rawAction.description || rawAction.reason || "Action recommended by AI Career Intelligence.",
+      priority: rawAction.priority || "HIGH",
+      estimatedTime: rawAction.estimatedTime || rawAction.duration || "10 min",
+      impact: rawAction.impact || "HIGH_IMPACT",
+      targetRoute: rawAction.actionUrl || rawAction.route || "/dashboard",
+      btnText: "Take Action Now"
+    };
+  }
 
-  const actionTitle = rawAction?.title || "Improve Your Resume ATS Score";
-  const actionDesc =
-    rawAction?.description ||
-    rawAction?.reason ||
-    "Your current ATS match score is 68%. Adding missing technical keywords for target Senior roles will increase recruiter callback rates.";
-  const priority = rawAction?.priority || "HIGH";
-  const estimatedTime = rawAction?.estimatedTime || rawAction?.duration || "15 min";
-  const impact = rawAction?.impact || "HIGH_IMPACT";
-  const targetRoute = rawAction?.actionUrl || rawAction?.route || "/dashboard/resume";
+  // Dynamic derivation based on real authenticated user state
+  const hasTargetRole = Boolean(user?.targetRole || user?.profile?.targetRole || user?.headline);
+  const hasResume = Boolean(resumeData && (resumeData._id || resumeData.fileName || resumeData.parsedText));
+  const hasApps = (applicationsCount || 0) > 0;
+
+  if (!hasTargetRole) {
+    return {
+      title: "Set Your Target Career Role",
+      description: "Specify your target position and job preferences to activate tailored opportunity matching.",
+      priority: "HIGH",
+      estimatedTime: "2 min",
+      impact: "HIGH_IMPACT",
+      targetRoute: "/dashboard/profile",
+      btnText: "Set Target Role"
+    };
+  }
+
+  if (!hasResume) {
+    return {
+      title: "Upload Your Resume",
+      description: "Upload your resume to calculate ATS match scores, extract skills, and enable application assistance.",
+      priority: "HIGH",
+      estimatedTime: "5 min",
+      impact: "HIGH_IMPACT",
+      targetRoute: "/dashboard/resume",
+      btnText: "Upload Resume"
+    };
+  }
+
+  if (!hasApps) {
+    return {
+      title: "Explore High-Match Opportunities",
+      description: "Browse AI-recommended job and internship opportunities matched against your candidate profile.",
+      priority: "MEDIUM",
+      estimatedTime: "10 min",
+      impact: "HIGH_IMPACT",
+      targetRoute: "/dashboard/opportunities",
+      btnText: "Explore Opportunities"
+    };
+  }
+
+  return {
+    title: "Review Career Intelligence & Roadmap",
+    description: "Your candidate profile and telemetry are active. Review your proactive intelligence briefing.",
+    priority: "RECOMMENDED",
+    estimatedTime: "5 min",
+    impact: "MEDIUM_IMPACT",
+    targetRoute: "/dashboard/intelligence",
+    btnText: "View Intelligence"
+  };
+};
+
+const NextBestAction = ({ osSnapshot, plannerData, user, resumeData, applicationsCount, onNavigate }) => {
+  const action = getDerivedAction(osSnapshot, plannerData, user, resumeData, applicationsCount);
 
   return (
     <MotionCard className="db-next-action-card" hoverElevation={-3}>
@@ -28,24 +81,24 @@ const NextBestAction = ({ osSnapshot, plannerData, onNavigate }) => {
           </div>
           <div>
             <span className="db-next-action-kicker">🎯 YOUR NEXT BEST ACTION</span>
-            <h2 className="db-next-action-heading">{actionTitle}</h2>
+            <h2 className="db-next-action-heading">{action.title}</h2>
           </div>
         </div>
 
         <div className="db-next-action-pills">
-          <span className={`db-priority-pill priority-${priority.toLowerCase()}`}>
+          <span className={`db-priority-pill priority-${(action.priority || "HIGH").toLowerCase()}`}>
             <Zap size={12} />
-            {priority === "HIGH" ? "High Priority" : "Recommended"}
+            {action.priority === "HIGH" ? "High Priority" : "Recommended"}
           </span>
 
           <span className="db-time-pill">
             <Clock size={12} />
-            {estimatedTime}
+            {action.estimatedTime}
           </span>
         </div>
       </div>
 
-      <p className="db-next-action-body">{actionDesc}</p>
+      <p className="db-next-action-body">{action.description}</p>
 
       <div className="db-next-action-footer">
         <div className="db-next-action-reasoning">
@@ -53,18 +106,18 @@ const NextBestAction = ({ osSnapshot, plannerData, onNavigate }) => {
           <div>
             <strong className="reasoning-title">Why this matters:</strong>
             <span className="reasoning-text">
-              {impact === "HIGH_IMPACT" || priority === "HIGH"
-                ? "Boosting ATS keyword coverage directly increases interview response rates by up to 3.4x."
-                : "Improves overall candidate readiness and opportunity match score quality."}
+              {action.impact === "HIGH_IMPACT" || action.priority === "HIGH"
+                ? "Completing foundational setup steps unlocks higher match precision and telemetry scoring."
+                : "Keeps your candidate application pipeline and readiness metrics up to date."}
             </span>
           </div>
         </div>
 
         <MotionButton
           className="db-next-action-btn"
-          onClick={() => onNavigate(targetRoute)}
+          onClick={() => onNavigate(action.targetRoute)}
         >
-          <span>Take Action Now</span>
+          <span>{action.btnText}</span>
           <ArrowRight size={16} />
         </MotionButton>
       </div>

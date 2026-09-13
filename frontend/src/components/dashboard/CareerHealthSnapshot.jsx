@@ -4,9 +4,9 @@ import MotionCard from "../motion/MotionCard";
 import StaggerContainer, { StaggerItem } from "../motion/StaggerContainer";
 import AnimatedNumber from "../motion/AnimatedNumber";
 
-const safeVal = (val, defaultVal) => {
-  if (val === undefined || val === null) return defaultVal;
-  return val;
+const safeNumber = (val) => {
+  const num = Number(val);
+  return Number.isFinite(num) && num >= 0 ? Math.round(num) : null;
 };
 
 const CareerHealthSnapshot = ({
@@ -16,11 +16,11 @@ const CareerHealthSnapshot = ({
   interviewReadiness,
   onNavigate,
 }) => {
-  const profileScore = safeVal(osSnapshot?.readinessMetrics?.overall, 90);
-  const resumeScore = safeVal(resumeData?.atsScore || osSnapshot?.readinessMetrics?.resume, 78);
-  const activeApps = safeVal(applicationsCount, 12);
-  const interviewScore = safeVal(interviewReadiness?.overallScore || osSnapshot?.readinessMetrics?.interview, 72);
-  const skillsCount = safeVal(osSnapshot?.skillsData?.improvingCount, 4);
+  const profileScore = safeNumber(osSnapshot?.readinessMetrics?.overall);
+  const resumeScore = safeNumber(resumeData?.atsScore || resumeData?.scores?.ats || osSnapshot?.readinessMetrics?.resume);
+  const activeApps = typeof applicationsCount === "number" ? applicationsCount : 0;
+  const interviewScore = safeNumber(interviewReadiness?.overallScore || interviewReadiness?.readinessScore || osSnapshot?.readinessMetrics?.interview);
+  const skillsCount = safeNumber(osSnapshot?.skillsData?.improvingCount);
 
   const cards = [
     {
@@ -28,7 +28,7 @@ const CareerHealthSnapshot = ({
       title: "Profile",
       val: profileScore,
       suffix: "%",
-      subtitle: "Complete",
+      subtitle: profileScore !== null ? "Readiness" : "Incomplete",
       icon: UserCheck,
       route: "/dashboard/profile",
       color: "blue",
@@ -38,7 +38,7 @@ const CareerHealthSnapshot = ({
       title: "Resume",
       val: resumeScore,
       suffix: "%",
-      subtitle: "ATS Health",
+      subtitle: resumeScore !== null ? "ATS Health" : "No Resume",
       icon: FileText,
       route: "/dashboard/resume",
       color: "purple",
@@ -48,7 +48,7 @@ const CareerHealthSnapshot = ({
       title: "Applications",
       val: activeApps,
       suffix: "",
-      subtitle: "Active Pipeline",
+      subtitle: activeApps > 0 ? "Active Pipeline" : "0 Active",
       icon: Briefcase,
       route: "/dashboard/applications",
       color: "emerald",
@@ -58,7 +58,7 @@ const CareerHealthSnapshot = ({
       title: "Interview",
       val: interviewScore,
       suffix: "%",
-      subtitle: "Coach Ready",
+      subtitle: interviewScore !== null ? "Coach Ready" : "Not Practiced",
       icon: Mic,
       route: "/dashboard/interview-coach",
       color: "amber",
@@ -66,11 +66,11 @@ const CareerHealthSnapshot = ({
     {
       id: "skills",
       title: "Skills",
-      val: skillsCount,
+      val: skillsCount !== null ? skillsCount : 0,
       suffix: "",
-      subtitle: "Improving",
+      subtitle: skillsCount !== null && skillsCount > 0 ? "Improving" : "Add Skills",
       icon: Cpu,
-      route: "/dashboard/career-os",
+      route: "/dashboard/profile",
       color: "indigo",
     },
   ];

@@ -40,11 +40,11 @@ const CareerAgentSchema = new mongoose.Schema(
     },
     currentGoal: {
       type: String,
-      default: 'Maximize hiring probability for target software engineering roles'
+      default: 'Set target role in profile'
     },
     primaryGoal: {
       type: String,
-      default: 'Land a high-impact Software Engineering position'
+      default: 'Set target role'
     },
     careerStage: {
       type: String,

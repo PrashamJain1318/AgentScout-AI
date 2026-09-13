@@ -2,17 +2,23 @@ import React from "react";
 import { Brain, FileText, BookmarkCheck, Award } from "lucide-react";
 
 const CareerSnapshot = ({ osSnapshot, resumeData, applicationsCount, interviewReadiness }) => {
-  const careerReadiness = osSnapshot?.careerScore || osSnapshot?.readinessMetrics?.overall || 72;
-  const resumeScore = resumeData?.scores?.ats || resumeData?.atsScore || 68;
+  const rawReadiness = osSnapshot?.careerScore ?? osSnapshot?.readinessMetrics?.overall;
+  const careerReadiness = typeof rawReadiness === "number" ? Math.round(rawReadiness) : null;
+
+  const rawResume = resumeData?.scores?.ats ?? resumeData?.atsScore;
+  const resumeScore = typeof rawResume === "number" ? Math.round(rawResume) : null;
+
   const appCount = typeof applicationsCount === "number" ? applicationsCount : 0;
-  const interviewScore = interviewReadiness?.readinessScore || interviewReadiness?.score || 75;
+
+  const rawInterview = interviewReadiness?.readinessScore ?? interviewReadiness?.score;
+  const interviewScore = typeof rawInterview === "number" ? Math.round(rawInterview) : null;
 
   const metrics = [
     {
       id: "readiness",
       label: "Career Readiness",
-      value: `${careerReadiness}%`,
-      percentage: careerReadiness,
+      value: careerReadiness !== null ? `${careerReadiness}%` : "Unavailable",
+      percentage: careerReadiness ?? 0,
       icon: Brain,
       color: "var(--accent-purple)",
       bg: "rgba(139, 92, 246, 0.12)",
@@ -20,8 +26,8 @@ const CareerSnapshot = ({ osSnapshot, resumeData, applicationsCount, interviewRe
     {
       id: "resume",
       label: "Resume ATS Score",
-      value: `${resumeScore}%`,
-      percentage: resumeScore,
+      value: resumeScore !== null ? `${resumeScore}%` : "Not analyzed",
+      percentage: resumeScore ?? 0,
       icon: FileText,
       color: "var(--accent-cyan)",
       bg: "rgba(6, 182, 212, 0.12)",
@@ -38,8 +44,8 @@ const CareerSnapshot = ({ osSnapshot, resumeData, applicationsCount, interviewRe
     {
       id: "interview",
       label: "Interview Readiness",
-      value: `${interviewScore}%`,
-      percentage: interviewScore,
+      value: interviewScore !== null ? `${interviewScore}%` : "Not practiced",
+      percentage: interviewScore ?? 0,
       icon: Award,
       color: "#10b981",
       bg: "rgba(16, 185, 129, 0.12)",

@@ -8,36 +8,7 @@ const TodayCareerPlan = ({ plannerData, onNavigate }) => {
     ? plannerData.todayPlan.actions.slice(0, 4)
     : Array.isArray(plannerData?.actions)
     ? plannerData.actions.slice(0, 4)
-    : [
-        {
-          id: "act-1",
-          title: "Improve Resume Keywords for Target Role",
-          estimatedTime: "15 min",
-          completed: true,
-          priority: "HIGH",
-        },
-        {
-          id: "act-2",
-          title: "Apply to Top Matched Senior Position",
-          estimatedTime: "10 min",
-          completed: true,
-          priority: "HIGH",
-        },
-        {
-          id: "act-3",
-          title: "Practice System Design & TypeScript Interview",
-          estimatedTime: "20 min",
-          completed: false,
-          priority: "MEDIUM",
-        },
-        {
-          id: "act-4",
-          title: "Review Opportunity Monitor Alerts",
-          estimatedTime: "5 min",
-          completed: false,
-          priority: "LOW",
-        },
-      ];
+    : [];
 
   const completedCount = actionsList.filter((a) => a.completed).length;
   const totalCount = actionsList.length;
@@ -53,7 +24,9 @@ const TodayCareerPlan = ({ plannerData, onNavigate }) => {
           <div>
             <h3 className="db-card-title">Today's Career Plan</h3>
             <span className="db-card-subtitle">
-              {completedCount} of {totalCount} completed ({progressPercent}%)
+              {totalCount > 0
+                ? `${completedCount} of ${totalCount} completed (${progressPercent}%)`
+                : "Personalized Daily Action Roadmap"}
             </span>
           </div>
         </div>
@@ -63,7 +36,7 @@ const TodayCareerPlan = ({ plannerData, onNavigate }) => {
           className="db-card-action-link"
           onClick={() => onNavigate("/dashboard/career-planner")}
         >
-          <span>Full Plan</span>
+          <span>{totalCount > 0 ? "Full Plan" : "Create Plan"}</span>
           <ArrowRight size={13} />
         </button>
       </div>
@@ -72,37 +45,51 @@ const TodayCareerPlan = ({ plannerData, onNavigate }) => {
         <AnimatedProgress value={progressPercent} height={6} />
       </div>
 
-      <ul className="db-plan-list">
-        {actionsList.map((item) => (
-          <MotionCard
-            key={item.id || item.title}
-            className={`db-plan-item ${item.completed ? "is-completed" : ""}`}
-            onClick={() => onNavigate("/dashboard/career-planner")}
-            hoverElevation={-1}
-          >
-            <div className="db-plan-checkbox">
-              {item.completed ? (
-                <div className="checkbox-checked">✓</div>
-              ) : (
-                <div className="checkbox-unchecked" />
-              )}
-            </div>
-
-            <div className="db-plan-content">
-              <span className="db-plan-title">{item.title}</span>
-              <div className="db-plan-meta">
-                <span className="db-plan-time">
-                  <Clock size={11} />
-                  {item.estimatedTime || "10 min"}
-                </span>
-                <span className={`db-plan-priority-tag tag-${(item.priority || "MEDIUM").toLowerCase()}`}>
-                  {item.priority || "MEDIUM"}
-                </span>
+      {totalCount > 0 ? (
+        <ul className="db-plan-list">
+          {actionsList.map((item) => (
+            <MotionCard
+              key={item.id || item.title}
+              className={`db-plan-item ${item.completed ? "is-completed" : ""}`}
+              onClick={() => onNavigate("/dashboard/career-planner")}
+              hoverElevation={-1}
+            >
+              <div className="db-plan-checkbox">
+                {item.completed ? (
+                  <div className="checkbox-checked">✓</div>
+                ) : (
+                  <div className="checkbox-unchecked" />
+                )}
               </div>
-            </div>
-          </MotionCard>
-        ))}
-      </ul>
+
+              <div className="db-plan-content">
+                <span className="db-plan-title">{item.title}</span>
+                <div className="db-plan-meta">
+                  <span className="db-plan-time">
+                    <Clock size={11} />
+                    {item.estimatedTime || item.duration || "10 min"}
+                  </span>
+                  <span className={`db-plan-priority-tag tag-${(item.priority || "MEDIUM").toLowerCase()}`}>
+                    {item.priority || "MEDIUM"}
+                  </span>
+                </div>
+              </div>
+            </MotionCard>
+          ))}
+        </ul>
+      ) : (
+        <div className="p-6 text-center rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 my-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            Your personalized daily plan will appear here as you set career goals.
+          </p>
+          <button
+            onClick={() => onNavigate("/dashboard/career-planner")}
+            className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-colors"
+          >
+            Create Career Plan
+          </button>
+        </div>
+      )}
     </section>
   );
 };

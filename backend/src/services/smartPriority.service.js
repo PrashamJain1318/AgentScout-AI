@@ -1,3 +1,4 @@
+const User = require('../models/User.model');
 const Resume = require('../models/Resume.model');
 const Application = require('../models/Application.model');
 const Opportunity = require('../models/Opportunity.model');
@@ -10,17 +11,42 @@ const InterviewSession = require('../models/InterviewSession.model');
 const evaluateSmartPriorities = async (userId) => {
   try {
     // Concurrent fetch using Promise.allSettled for maximum throughput
-    const [resumeRes, appsRes, oppRes, interviewRes] = await Promise.allSettled([
+    const [userRes, resumeRes, appsRes, oppRes, interviewRes] = await Promise.allSettled([
+      User ? User.findById(userId).lean() : Promise.resolve(null),
       Resume ? Resume.findOne({ user: userId }).select('atsScore score updatedAt').sort({ updatedAt: -1 }).lean() : Promise.resolve(null),
       Application ? Application.find({ user: userId }).select('status createdAt updatedAt').sort({ updatedAt: -1 }).limit(10).lean() : Promise.resolve([]),
       Opportunity ? Opportunity.findOne({ status: 'ACTIVE', matchScore: { $gte: 75 } }).select('title company matchScore').sort({ matchScore: -1 }).lean() : Promise.resolve(null),
       InterviewSession ? InterviewSession.findOne({ user: userId, status: { $in: ['SCHEDULED', 'IN_PROGRESS', 'PREPARING', 'COMPLETED'] } }).select('targetRole status').sort({ createdAt: -1 }).lean() : Promise.resolve(null)
     ]);
 
+    const user = userRes.status === 'fulfilled' ? userRes.value : null;
     const resume = resumeRes.status === 'fulfilled' ? resumeRes.value : null;
     const applications = appsRes.status === 'fulfilled' && Array.isArray(appsRes.value) ? appsRes.value : [];
     const topOpportunity = oppRes.status === 'fulfilled' ? oppRes.value : null;
     const upcomingInterview = interviewRes.status === 'fulfilled' ? interviewRes.value : null;
+
+    const profile = user?.profile || {};
+    const hasTargetRole = Boolean((user?.targetRole || profile.targetRole || profile.headline) && (user?.targetRole || profile.targetRole || profile.headline).trim());
+
+    if (!hasTargetRole) {
+      return {
+        primaryFocus: 'PROFILE_BUILDING',
+        smartPriorities: [
+          {
+            id: 'p-set-target-role',
+            title: 'Set Your Target Role',
+            description: 'Define your target role in settings to unlock hyper-personalized job matching, ATS resume scoring, and interview practice.',
+            category: 'profile',
+            priority: 'critical',
+            deepLink: '/settings',
+            actionLabel: 'Set Target Role',
+            impact: 'Essential Baseline',
+            reason: 'No target role configured in career profile.',
+            icon: 'target'
+          }
+        ]
+      };
+    }
 
     const priorities = [];
     let primaryFocus = 'CAREER_GROWTH';

@@ -34,7 +34,7 @@ const MatchCard = ({ match, onApply = null }) => {
   const opp = match.opportunity || {};
   const oppId = opp._id || opp.id || matchId;
 
-  const title = opp.title || match.jobTitle || "Software Engineer";
+  const title = opp.title || match.jobTitle || "Opportunity";
   const company = opp.company || match.company || "Company";
   const location = opp.location || match.location || "Remote";
   const remote = opp.remote || match.workMode === "remote";

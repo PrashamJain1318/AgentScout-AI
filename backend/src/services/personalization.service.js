@@ -109,44 +109,44 @@ const updatePreferences = async (userId, preferences) => {
 function fallbackPersonalization(userId) {
   return {
     user: userId,
-    currentStage: 'RESUME_OPTIMIZATION',
-    primaryFocus: 'WEAK_RESUME',
+    currentStage: 'PROFILE_BUILDING',
+    primaryFocus: 'NO_PROFILE',
     smartPriorities: [
       {
         id: 'p-default',
-        title: 'Optimize Your Resume ATS Score',
-        description: 'Upload or refine your resume in Resume Studio to unlock tailored job matching.',
-        category: 'resume',
+        title: 'Set Target Role & Complete Profile',
+        description: 'Set your target role and complete core preferences to unlock personalized career intelligence.',
+        category: 'profile',
         priority: 'critical',
-        deepLink: '/resume-studio',
-        actionLabel: 'Open Resume Studio',
+        deepLink: '/settings',
+        actionLabel: 'Complete Profile',
         impact: 'Essential Baseline',
-        reason: 'Recommended for optimal job matching.',
-        icon: 'file-text'
+        reason: 'Profile setup is required to initialize AI career guidance.',
+        icon: 'target'
       }
     ],
     momentum: {
-      score: 60,
+      score: 0,
       trend: 'STABLE',
       changePercentage: 0,
-      lastActiveDays: 1,
-      weeklyActivityCount: 2
+      lastActiveDays: 0,
+      weeklyActivityCount: 0
     },
     dailyInsight: {
-      title: 'Resume Impact Optimization',
-      category: 'Resume Strategy',
-      tip: 'Using strong action verbs and quantifiable results increases ATS resume pass rates by 40%.',
-      deepLink: '/resume-studio',
-      deepLinkLabel: 'Optimize Resume',
-      rationale: 'Generated to boost candidate application performance.'
+      title: 'Initialize Career Profile',
+      category: 'Profile Setup',
+      tip: 'Setting a clear target role unlocks high-precision job matching and custom interview coaching.',
+      deepLink: '/settings',
+      deepLinkLabel: 'Set Target Role',
+      rationale: 'Generated for new user onboarding.'
     },
     journeyPhases: [
-      { id: 'phase-profile', label: 'Profile Setup', status: 'completed', progress: 100, deepLink: '/settings' },
-      { id: 'phase-resume', label: 'Resume Optimization', status: 'active', progress: 65, deepLink: '/resume-studio' },
-      { id: 'phase-opportunities', label: 'Job Discovery', status: 'upcoming', progress: 20, deepLink: '/opportunity-discovery' },
-      { id: 'phase-applications', label: 'Applications', status: 'upcoming', progress: 0, deepLink: '/applications' },
-      { id: 'phase-interviews', label: 'Interviews', status: 'upcoming', progress: 0, deepLink: '/interview-prep' },
-      { id: 'phase-growth', label: 'Career OS', status: 'upcoming', progress: 0, deepLink: '/career-os' }
+      { id: 'phase-profile', label: 'Profile Setup', status: 'incomplete', progress: 0, deepLink: '/settings' },
+      { id: 'phase-resume', label: 'Resume Optimization', status: 'not_started', progress: 0, deepLink: '/resume-studio' },
+      { id: 'phase-opportunities', label: 'Job Discovery', status: 'not_started', progress: 0, deepLink: '/opportunity-discovery' },
+      { id: 'phase-applications', label: 'Applications', status: 'not_started', progress: 0, deepLink: '/applications' },
+      { id: 'phase-interviews', label: 'Interviews', status: 'not_started', progress: 0, deepLink: '/interview-prep' },
+      { id: 'phase-growth', label: 'Career OS', status: 'not_started', progress: 0, deepLink: '/career-os' }
     ],
     widgetPriorityOrder: ['greeting', 'priority', 'journey', 'momentum', 'readiness', 'opportunities', 'insight', 'today_plan', 'agent', 'activity'],
     userPreferences: { adaptiveLayout: true, focusMode: false, customThemeAccent: 'indigo' },

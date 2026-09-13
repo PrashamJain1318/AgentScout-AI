@@ -17,38 +17,7 @@ const getEventIcon = (type) => {
 };
 
 const SmartActivityFeed = ({ recentActivities, loading, onNavigate }) => {
-  const events = Array.isArray(recentActivities) && recentActivities.length > 0
-    ? recentActivities.slice(0, 4)
-    : [
-        {
-          id: "act-1",
-          type: "RESUME",
-          title: "ATS Resume Health Analyzed",
-          message: "Resume keywords updated for Senior Frontend Engineer role.",
-          time: "2 hours ago",
-        },
-        {
-          id: "act-2",
-          type: "MATCH",
-          title: "New High-Match Opportunity Found",
-          message: "94% match for Staff Software Engineer at Acme Corp.",
-          time: "4 hours ago",
-        },
-        {
-          id: "act-3",
-          type: "INTERVIEW",
-          title: "System Design Practice Completed",
-          message: "Scored 84% on distributed caching simulation.",
-          time: "Yesterday",
-        },
-        {
-          id: "act-4",
-          type: "AGENT",
-          title: "AI Career Agent Telemetry Cycle",
-          message: "Evaluated 14 new active market postings.",
-          time: "1 day ago",
-        },
-      ];
+  const events = Array.isArray(recentActivities) ? recentActivities.slice(0, 4) : [];
 
   return (
     <section className="db-activity-feed-section">
@@ -60,9 +29,9 @@ const SmartActivityFeed = ({ recentActivities, loading, onNavigate }) => {
         <button
           type="button"
           className="db-link-btn"
-          onClick={() => onNavigate("/dashboard/analytics")}
+          onClick={() => onNavigate("/dashboard/notifications")}
         >
-          <span>View Analytics</span>
+          <span>View All Activity</span>
           <ArrowRight size={14} />
         </button>
       </div>
@@ -73,7 +42,7 @@ const SmartActivityFeed = ({ recentActivities, loading, onNavigate }) => {
             <div key={i} className="db-activity-item-skeleton" />
           ))}
         </div>
-      ) : (
+      ) : events.length > 0 ? (
         <div className="db-activity-list">
           {events.map((event) => {
             const Icon = getEventIcon(event.type || event.category);
@@ -92,6 +61,12 @@ const SmartActivityFeed = ({ recentActivities, loading, onNavigate }) => {
               </div>
             );
           })}
+        </div>
+      ) : (
+        <div className="p-6 text-center rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            No career activity yet.
+          </p>
         </div>
       )}
     </section>

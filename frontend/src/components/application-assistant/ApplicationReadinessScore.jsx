@@ -25,52 +25,52 @@ const ApplicationReadinessScore = ({ readinessScore = 0, breakdown = {} }) => {
 
       <div className="readiness-breakdown-grid">
         <div className="breakdown-item">
-          <div className="flex-between">
+          <div className="breakdown-header">
             <span className="metric-label">Resume Alignment</span>
-            <strong>{resumeAlignment}%</strong>
+            <strong style={{ color: "var(--accent-purple)" }}>{resumeAlignment}%</strong>
           </div>
-          <div className="progress-bar-bg">
-            <div className="progress-bar-fill" style={{ width: `${resumeAlignment}%` }} />
+          <div className="hero-progress-track">
+            <div className="hero-progress-fill" style={{ width: `${resumeAlignment}%` }} />
           </div>
         </div>
 
         <div className="breakdown-item">
-          <div className="flex-between">
+          <div className="breakdown-header">
             <span className="metric-label">Skill Coverage</span>
-            <strong>{skillCoverage}%</strong>
+            <strong style={{ color: "var(--accent-purple)" }}>{skillCoverage}%</strong>
           </div>
-          <div className="progress-bar-bg">
-            <div className="progress-bar-fill" style={{ width: `${skillCoverage}%` }} />
+          <div className="hero-progress-track">
+            <div className="hero-progress-fill" style={{ width: `${skillCoverage}%` }} />
           </div>
         </div>
 
         <div className="breakdown-item">
-          <div className="flex-between">
+          <div className="breakdown-header">
             <span className="metric-label">Experience Alignment</span>
-            <strong>{experienceAlignment}%</strong>
+            <strong style={{ color: "var(--accent-purple)" }}>{experienceAlignment}%</strong>
           </div>
-          <div className="progress-bar-bg">
-            <div className="progress-bar-fill" style={{ width: `${experienceAlignment}%` }} />
+          <div className="hero-progress-track">
+            <div className="hero-progress-fill" style={{ width: `${experienceAlignment}%` }} />
           </div>
         </div>
 
         <div className="breakdown-item">
-          <div className="flex-between">
+          <div className="breakdown-header">
             <span className="metric-label">Portfolio Strength</span>
-            <strong>{portfolioStrength}%</strong>
+            <strong style={{ color: "var(--accent-purple)" }}>{portfolioStrength}%</strong>
           </div>
-          <div className="progress-bar-bg">
-            <div className="progress-bar-fill" style={{ width: `${portfolioStrength}%` }} />
+          <div className="hero-progress-track">
+            <div className="hero-progress-fill" style={{ width: `${portfolioStrength}%` }} />
           </div>
         </div>
 
         <div className="breakdown-item">
-          <div className="flex-between">
+          <div className="breakdown-header">
             <span className="metric-label">Profile Alignment</span>
-            <strong>{profileAlignment}%</strong>
+            <strong style={{ color: "var(--accent-purple)" }}>{profileAlignment}%</strong>
           </div>
-          <div className="progress-bar-bg">
-            <div className="progress-bar-fill" style={{ width: `${profileAlignment}%` }} />
+          <div className="hero-progress-track">
+            <div className="hero-progress-fill" style={{ width: `${profileAlignment}%` }} />
           </div>
         </div>
       </div>

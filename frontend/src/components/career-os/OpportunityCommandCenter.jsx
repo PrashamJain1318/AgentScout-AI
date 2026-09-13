@@ -38,7 +38,7 @@ const OpportunityCommandCenter = ({ opportunities = [] }) => {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
         {opportunities.slice(0, 4).map((opp) => {
-          const matchScore = opp.matchScore || opp.score || 85;
+          const matchScore = opp.matchScore ?? opp.score ?? null;
           return (
             <div key={opp._id || opp.id} className="suggestion-item-card flex-between" style={{ padding: "14px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -55,7 +55,7 @@ const OpportunityCommandCenter = ({ opportunities = [] }) => {
 
               <div className="flex-between" style={{ gap: "12px" }}>
                 <span className="impact-badge excellent" style={{ fontSize: "11px" }}>
-                  <Sparkles size={11} /> {matchScore}% MATCH
+                  <Sparkles size={11} /> {typeof matchScore === "number" ? `${matchScore}% MATCH` : "MATCH N/A"}
                 </span>
 
                 <div style={{ display: "flex", gap: "6px" }}>

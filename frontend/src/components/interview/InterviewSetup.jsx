@@ -38,7 +38,7 @@ const InterviewSetup = ({ opportunities = [], selectedOpp = null, onStart, loadi
             value={opportunityId}
             onChange={(e) => setOpportunityId(e.target.value)}
           >
-            <option value="">-- General Software Engineering Mock Interview --</option>
+            <option value="">-- General Role Mock Interview --</option>
             {opportunities.map((opp) => (
               <option key={opp._id || opp.id} value={opp._id || opp.id}>
                 {opp.title} — {opp.company} ({opp.location || "Remote"})

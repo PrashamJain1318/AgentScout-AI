@@ -107,6 +107,12 @@ function App() {
                       <Route path="/career-intelligence" element={<CareerIntelligence />} />
                       <Route path="/dashboard/intelligence" element={<CareerIntelligence />} />
                       <Route path="/intelligence" element={<CareerIntelligence />} />
+
+                      {/* Deep-link route aliases */}
+                      <Route path="/resume-studio" element={<ResumeDashboard />} />
+                      <Route path="/opportunity-discovery" element={<Opportunities />} />
+                      <Route path="/interview-prep" element={<InterviewCoach />} />
+                      <Route path="/match-analysis" element={<Matches />} />
                     </Route>
                   </Route>
 

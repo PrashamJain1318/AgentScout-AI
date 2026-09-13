@@ -25,10 +25,11 @@ const CareerIntelligenceWidget = ({ onNavigate }) => {
   }, []);
 
   const health = data?.health || {};
-  const score = health.overallScore ?? 75;
+  const rawScore = health.overallScore;
+  const score = typeof rawScore === 'number' ? Math.round(rawScore) : null;
   const trend = health.trend || 'STABLE';
   const change = health.change || 0;
-  const topInsight = data?.highlights?.[0]?.title || 'Review top AI recommendations to optimize your candidate profile.';
+  const topInsight = data?.highlights?.[0]?.title || null;
 
   const renderTrend = () => {
     if (trend === 'IMPROVING' || change > 0) {
@@ -80,7 +81,7 @@ const CareerIntelligenceWidget = ({ onNavigate }) => {
             Career Health Score
           </span>
           <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-            {loading ? '...' : score} <span className="text-xs font-semibold text-slate-400">/ 100</span>
+            {loading ? '...' : score !== null ? score : 'N/A'} {score !== null && <span className="text-xs font-semibold text-slate-400">/ 100</span>}
           </span>
         </div>
         <button
@@ -92,11 +93,9 @@ const CareerIntelligenceWidget = ({ onNavigate }) => {
         </button>
       </div>
 
-      {topInsight && (
-        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic">
-          💡 <strong>Top Insight:</strong> {topInsight}
-        </p>
-      )}
+      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic">
+        💡 <strong>Top Insight:</strong> {topInsight || 'Your personalized career insights will appear as you build your candidate profile and activity.'}
+      </p>
     </div>
   );
 };

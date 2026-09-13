@@ -185,7 +185,7 @@ const ApplicationDetails = () => {
   }
 
   const opp = application.opportunity || {};
-  const title = application.jobTitle || opp.title || "Software Engineer";
+  const title = application.jobTitle || opp.title || "Untitled Role";
   const company = application.company || opp.company || "Company";
   const location = application.location || opp.location || "Remote";
   const remote = opp.remote || application.workMode === "remote";
@@ -196,7 +196,7 @@ const ApplicationDetails = () => {
   const rawUrl = application.jobUrl || application.applicationUrl || opp.applicationUrl || "";
   const targetUrl = getCleanExternalUrl(rawUrl);
   const isUrlValid = isValidExternalUrl(targetUrl);
-  const score = application.matchScore || opp.matchScore || application.score || 85;
+  const score = application.matchScore ?? opp.matchScore ?? application.score ?? null;
 
   return (
     <div className="opportunity-details-page">
@@ -361,7 +361,7 @@ const ApplicationDetails = () => {
             <div className="overview-details-grid" style={{ marginTop: "14px" }}>
               <div className="overview-item">
                 <span>Match Score</span>
-                <strong style={{ color: "var(--primary)" }}>{score}% Match</strong>
+                <strong style={{ color: "var(--primary)" }}>{typeof score === "number" ? `${score}% Match` : "N/A"}</strong>
               </div>
               <div className="overview-item">
                 <span>Applied Date</span>

@@ -23,6 +23,16 @@ const calculateMomentumScore = async (userId) => {
     const resumeScore = resume?.atsScore ?? resume?.score ?? 0;
     const interviewCount = interviewRes.status === 'fulfilled' ? interviewRes.value : 0;
 
+    if (applicationsCount === 0 && recentAppsCount === 0 && !resume && interviewCount === 0) {
+      return {
+        score: 0,
+        trend: 'STABLE',
+        changePercentage: 0,
+        lastActiveDays: 0,
+        weeklyActivityCount: 0
+      };
+    }
+
     // Weighted Score Calculation
     // 1. Resume baseline contribution (up to 30 pts)
     const resumeContribution = Math.min(30, Math.round((resumeScore / 100) * 30));
@@ -36,7 +46,7 @@ const calculateMomentumScore = async (userId) => {
     // 4. Interview preparation commitment (up to 20 pts)
     const interviewContribution = Math.min(20, interviewCount * 10);
 
-    score = Math.min(100, Math.max(10, resumeContribution + appPresenceContribution + velocityContribution + interviewContribution));
+    const score = Math.min(100, resumeContribution + appPresenceContribution + velocityContribution + interviewContribution);
 
     let trend = 'STABLE';
     let changePercentage = 0;
@@ -44,12 +54,12 @@ const calculateMomentumScore = async (userId) => {
     if (score >= 75) {
       trend = 'UP';
       changePercentage = 15;
-    } else if (score < 40) {
+    } else if (score < 40 && score > 0) {
       trend = 'DOWN';
       changePercentage = -10;
     } else {
       trend = 'STABLE';
-      changePercentage = 5;
+      changePercentage = 0;
     }
 
     return {

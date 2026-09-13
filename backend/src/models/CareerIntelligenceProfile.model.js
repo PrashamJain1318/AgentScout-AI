@@ -10,7 +10,7 @@ const CareerIntelligenceProfileSchema = new mongoose.Schema(
     },
     targetRole: {
       type: String,
-      default: 'Software Engineer'
+      default: ''
     },
     careerStage: {
       type: String,
@@ -28,7 +28,7 @@ const CareerIntelligenceProfileSchema = new mongoose.Schema(
     },
     experienceLevel: {
       type: String,
-      default: 'Mid-Level'
+      default: ''
     },
     primarySkills: [String],
     secondarySkills: [String],
@@ -48,18 +48,18 @@ const CareerIntelligenceProfileSchema = new mongoose.Schema(
     targetLocations: [String],
 
     // 7-Dimension Scores
-    readinessScore: { type: Number, default: 70, min: 0, max: 100 },
-    marketAlignmentScore: { type: Number, default: 75, min: 0, max: 100 },
-    careerMomentumScore: { type: Number, default: 65, min: 0, max: 100 },
-    applicationEffectivenessScore: { type: Number, default: 60, min: 0, max: 100 },
-    interviewReadinessScore: { type: Number, default: 55, min: 0, max: 100 },
-    careerRiskScore: { type: Number, default: 25, min: 0, max: 100 },
-    overallCareerHealthScore: { type: Number, default: 72, min: 0, max: 100 },
+    readinessScore: { type: Number, default: 0, min: 0, max: 100 },
+    marketAlignmentScore: { type: Number, default: 0, min: 0, max: 100 },
+    careerMomentumScore: { type: Number, default: 0, min: 0, max: 100 },
+    applicationEffectivenessScore: { type: Number, default: 0, min: 0, max: 100 },
+    interviewReadinessScore: { type: Number, default: 0, min: 0, max: 100 },
+    careerRiskScore: { type: Number, default: 0, min: 0, max: 100 },
+    overallCareerHealthScore: { type: Number, default: 0, min: 0, max: 100 },
 
     healthCategory: {
       type: String,
       enum: ['EXCELLENT', 'STRONG', 'DEVELOPING', 'AT_RISK', 'CRITICAL'],
-      default: 'STRONG'
+      default: 'DEVELOPING'
     },
 
     primaryBottleneck: {

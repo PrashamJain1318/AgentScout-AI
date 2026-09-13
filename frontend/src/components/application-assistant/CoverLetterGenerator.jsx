@@ -11,14 +11,25 @@ const CoverLetterGenerator = ({ opportunityId, initialCoverLetter = null }) => {
   const [notice, setNotice] = useState(null);
   const [errorNotice, setErrorNotice] = useState(null);
 
+  const [isEdited, setIsEdited] = useState(false);
+
   useEffect(() => {
     if (initialCoverLetter?.content) {
       setContent(initialCoverLetter.content);
+      setIsEdited(false);
     }
   }, [initialCoverLetter]);
 
   const handleGenerate = async () => {
     if (!opportunityId) return;
+    
+    if (content && isEdited) {
+      const confirmOverwrite = window.confirm(
+        "You have made manual edits to the cover letter. Generating a new one will overwrite your changes. Do you want to proceed?"
+      );
+      if (!confirmOverwrite) return;
+    }
+
     setGenerating(true);
     setNotice(null);
     setErrorNotice(null);
@@ -26,6 +37,7 @@ const CoverLetterGenerator = ({ opportunityId, initialCoverLetter = null }) => {
     try {
       const res = await generateCoverLetter(opportunityId, { tone, length });
       setContent(res.coverLetter?.content || "");
+      setIsEdited(false);
       setNotice("Tailored cover letter generated successfully.");
     } catch (err) {
       setErrorNotice("Failed to generate cover letter.");
@@ -39,6 +51,11 @@ const CoverLetterGenerator = ({ opportunityId, initialCoverLetter = null }) => {
     navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleContentChange = (e) => {
+    setContent(e.target.value);
+    setIsEdited(true);
   };
 
   return (
@@ -114,7 +131,7 @@ const CoverLetterGenerator = ({ opportunityId, initialCoverLetter = null }) => {
             className="form-input"
             style={{ width: "100%", minHeight: "220px", fontFamily: "inherit", lineHeight: "1.6" }}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={handleContentChange}
           />
         ) : (
           <p className="no-data-text" style={{ padding: "20px 0" }}>

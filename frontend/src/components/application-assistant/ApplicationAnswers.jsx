@@ -17,6 +17,15 @@ const ApplicationAnswers = ({ opportunityId, initialAnswers = [] }) => {
 
   const handleGenerate = async () => {
     if (!opportunityId) return;
+
+    const hasEdits = answers.some((a) => a.isEdited);
+    if (hasEdits) {
+      const confirmOverwrite = window.confirm(
+        "You have manually edited some answers. Generating new answers will overwrite your changes. Do you want to proceed?"
+      );
+      if (!confirmOverwrite) return;
+    }
+
     setGenerating(true);
     setNotice(null);
     setErrorNotice(null);
@@ -79,28 +88,42 @@ const ApplicationAnswers = ({ opportunityId, initialAnswers = [] }) => {
         <p className="no-data-text">No application answers generated yet. Click "Generate Answers" above.</p>
       ) : (
         <div className="suggestions-list-box">
+          <div className="card-apply-notice info" style={{ marginBottom: "16px" }}>
+            <HelpCircle size={16} />
+            <span>AI-generated answers are drafts. Please review and edit before submitting.</span>
+          </div>
           {answers.map((item, idx) => (
             <div key={idx} className="suggestion-item-card">
-              <div className="suggestion-header flex-between">
-                <strong style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div className="suggestion-header-row">
+                <h4 className="suggestion-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <HelpCircle size={14} className="text-primary" />
                   <span>{item.question}</span>
-                </strong>
+                </h4>
 
                 <button
                   type="button"
                   className="secondary-action-btn"
                   onClick={() => handleCopy(item.answer, idx)}
-                  style={{ padding: "4px 8px" }}
+                  style={{ padding: "6px 10px", fontSize: "12px" }}
                 >
-                  {copiedIdx === idx ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+                  {copiedIdx === idx ? <Check size={14} className="text-success" /> : <Copy size={14} />}
                   <span>{copiedIdx === idx ? "Copied" : "Copy"}</span>
                 </button>
               </div>
 
-              <p className="suggestion-explanation" style={{ color: "var(--text)", marginTop: "6px" }}>
-                {item.answer}
-              </p>
+              <div style={{ marginTop: "12px" }}>
+                <textarea
+                  className="form-input"
+                  style={{ width: "100%", minHeight: "100px", fontFamily: "inherit", lineHeight: "1.5" }}
+                  value={item.answer}
+                  onChange={(e) => {
+                    const newAnswers = [...answers];
+                    newAnswers[idx].answer = e.target.value;
+                    newAnswers[idx].isEdited = true;
+                    setAnswers(newAnswers);
+                  }}
+                />
+              </div>
             </div>
           ))}
         </div>

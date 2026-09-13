@@ -5,37 +5,29 @@ import AnimatedProgress from "../motion/AnimatedProgress";
 import MotionButton from "../motion/MotionButton";
 import FadeIn from "../motion/FadeIn";
 
-const getSafeScore = (val, defaultVal = 75) => {
+const getRealScore = (val) => {
   const num = Number(val);
-  if (Number.isFinite(num)) {
-    return Math.min(100, Math.max(0, Math.round(num)));
+  if (Number.isFinite(num) && num >= 0) {
+    return Math.min(100, Math.round(num));
   }
-  return defaultVal;
+  return null;
 };
 
 const CareerReadinessHero = ({ osSnapshot, onNavigate }) => {
-  const overallScore = getSafeScore(
-    osSnapshot?.readinessMetrics?.overall || osSnapshot?.careerScore,
-    78
-  );
+  const rawOverall = osSnapshot?.readinessMetrics?.overall ?? osSnapshot?.careerScore;
+  const overallScore = getRealScore(rawOverall);
+  const hasData = overallScore !== null;
+
+  const resumeScore = getRealScore(osSnapshot?.readinessMetrics?.resume);
+  const skillsScore = getRealScore(osSnapshot?.readinessMetrics?.skills);
+  const expScore = getRealScore(osSnapshot?.readinessMetrics?.experience);
+  const interviewScore = getRealScore(osSnapshot?.readinessMetrics?.interview);
 
   const metrics = [
-    {
-      label: "Resume ATS",
-      score: getSafeScore(osSnapshot?.readinessMetrics?.resume || 78),
-    },
-    {
-      label: "Skills Match",
-      score: getSafeScore(osSnapshot?.readinessMetrics?.skills || 84),
-    },
-    {
-      label: "Experience",
-      score: getSafeScore(osSnapshot?.readinessMetrics?.experience || 72),
-    },
-    {
-      label: "Interview",
-      score: getSafeScore(osSnapshot?.readinessMetrics?.interview || 68),
-    },
+    { label: "Resume ATS", score: resumeScore },
+    { label: "Skills Match", score: skillsScore },
+    { label: "Experience", score: expScore },
+    { label: "Interview", score: interviewScore },
   ];
 
   return (
@@ -48,47 +40,67 @@ const CareerReadinessHero = ({ osSnapshot, onNavigate }) => {
           </div>
 
           <div className="db-readiness-score-display">
-            <AnimatedNumber
-              value={overallScore}
-              suffix="%"
-              duration={900}
-              className="db-readiness-score-num"
-            />
+            {hasData ? (
+              <AnimatedNumber
+                value={overallScore}
+                suffix="%"
+                duration={900}
+                className="db-readiness-score-num"
+              />
+            ) : (
+              <span className="db-readiness-score-num text-slate-400">N/A</span>
+            )}
+
             <div className="db-readiness-score-text">
-              <h3>Strong Opportunity Readiness</h3>
-              <p>You are making solid progress toward target Senior & Staff level opportunities.</p>
+              <h3>{hasData ? "Opportunity Readiness Score" : "Career Readiness Unavailable"}</h3>
+              <p>
+                {hasData
+                  ? "Calculated telemetry based on target role requirements and profile data."
+                  : "Complete your profile and upload a resume to calculate your opportunity readiness telemetry."}
+              </p>
             </div>
           </div>
 
           <div className="db-readiness-bar-container">
-            <AnimatedProgress value={overallScore} height={8} />
+            <AnimatedProgress value={hasData ? overallScore : 0} height={8} />
           </div>
 
           <div className="db-readiness-breakdown-row">
             {metrics.map((m) => (
               <div key={m.label} className="db-readiness-mini-metric">
                 <span className="mini-metric-label">{m.label}</span>
-                <AnimatedNumber
-                  value={m.score}
-                  suffix="%"
-                  duration={750}
-                  className="mini-metric-val"
-                />
+                {m.score !== null ? (
+                  <AnimatedNumber
+                    value={m.score}
+                    suffix="%"
+                    duration={750}
+                    className="mini-metric-val"
+                  />
+                ) : (
+                  <span className="mini-metric-val text-xs text-slate-400">--</span>
+                )}
               </div>
             ))}
           </div>
         </div>
 
         <div className="db-readiness-side-cta">
-          <div className="db-readiness-badge">
-            <TrendingUp size={16} />
-            <span>+4% this week</span>
-          </div>
+          {hasData && osSnapshot?.momentum?.changePercentage ? (
+            <div className="db-readiness-badge">
+              <TrendingUp size={16} />
+              <span>{osSnapshot.momentum.changePercentage > 0 ? `+${osSnapshot.momentum.changePercentage}% this week` : `${osSnapshot.momentum.changePercentage}% this week`}</span>
+            </div>
+          ) : (
+            <div className="db-readiness-badge opacity-75">
+              <ShieldCheck size={16} />
+              <span>{hasData ? "Telemetry Active" : "Pending Profile Data"}</span>
+            </div>
+          )}
           <MotionButton
             className="db-readiness-btn"
-            onClick={() => onNavigate("/dashboard/career-os")}
+            onClick={() => onNavigate(hasData ? "/dashboard/career-os" : "/dashboard/profile")}
           >
-            <span>View Full Career OS</span>
+            <span>{hasData ? "View Full Career OS" : "Complete Profile"}</span>
             <ArrowRight size={14} />
           </MotionButton>
         </div>

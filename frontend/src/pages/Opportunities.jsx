@@ -157,7 +157,7 @@ const Opportunities = () => {
       <div className="page-header-banner">
         <span className="eyebrow">DISCOVERY & AI MATCHING</span>
         <h2>OPPORTUNITIES</h2>
-        <p>Discover AI-matched software engineering roles, internships, and research opportunities.</p>
+        <p>Discover AI-matched career roles, internships, and research opportunities.</p>
       </div>
 
       {/* 1. Large AI Search Component */}

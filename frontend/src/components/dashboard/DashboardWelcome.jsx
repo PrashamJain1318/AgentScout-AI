@@ -14,11 +14,12 @@ const getFormattedDate = () => {
   return new Date().toLocaleDateString("en-US", options);
 };
 
-const DashboardWelcome = ({ user, osSnapshot }) => {
-  const firstName = user?.firstName || user?.name || "Candidate";
+  const rawName = user?.firstName || (user?.name ? user.name.split(" ")[0] : null);
+  const nameDisplay = rawName ? `, ${rawName}` : "";
   const greeting = getGreeting();
   const currentDate = getFormattedDate();
-  const targetRole = user?.targetRole || user?.headline || "Software Engineer";
+  const rawRole = user?.targetRole || user?.profile?.targetRole || user?.headline;
+  const hasRole = Boolean(rawRole && rawRole.trim());
   const isAgentActive = osSnapshot?.agentState?.status !== "DISABLED";
 
   return (
@@ -37,11 +38,19 @@ const DashboardWelcome = ({ user, osSnapshot }) => {
           </div>
 
           <h1 className="db-welcome-heading">
-            {greeting}, {firstName} 👋
+            {greeting}{nameDisplay} 👋
           </h1>
 
           <p className="db-welcome-subheading">
-            Your career trajectory for <strong>{targetRole}</strong> is moving forward. Here is your personalized intelligence briefing.
+            {hasRole ? (
+              <>
+                Your career trajectory for <strong>{rawRole}</strong> is moving forward. Here is your personalized intelligence briefing.
+              </>
+            ) : (
+              <>
+                Set your target role in profile settings to unlock full personalized career intelligence telemetry.
+              </>
+            )}
           </p>
         </div>
 

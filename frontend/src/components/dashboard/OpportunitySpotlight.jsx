@@ -50,9 +50,9 @@ const OpportunitySpotlight = ({ recommendations, loading, error, onNavigate }) =
       ) : (
         <div className="spotlight-grid">
           {displayOpps.map((opp) => {
-            const matchScore = opp.matchScore || opp.score || 88;
-            const company = opp.company || opp.companyName || "Top Tech Company";
-            const title = opp.title || opp.role || "Senior Software Engineer";
+            const matchScore = opp.matchScore ?? opp.score ?? null;
+            const company = opp.company || opp.companyName || "Company";
+            const title = opp.title || opp.role || "Opportunity Spotlight";
             const location = opp.location || opp.workplaceType || "Remote";
             const oppId = opp._id || opp.id;
 
@@ -71,7 +71,7 @@ const OpportunitySpotlight = ({ recommendations, loading, error, onNavigate }) =
 
                   <div className="spotlight-match-badge">
                     <Sparkles size={11} />
-                    <span>{matchScore}% Match</span>
+                    <span>{typeof matchScore === "number" ? `${matchScore}% Match` : "Match N/A"}</span>
                   </div>
                 </div>
 

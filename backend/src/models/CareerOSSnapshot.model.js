@@ -102,7 +102,7 @@ const CareerOSSnapshotSchema = new mongoose.Schema(
       }
     ],
     momentum: {
-      score: { type: Number, default: 50 },
+      score: { type: Number, default: 0 },
       trend: { type: String, enum: ['UP', 'STABLE', 'DOWN'], default: 'STABLE' },
       changePercentage: { type: Number, default: 0 }
     },

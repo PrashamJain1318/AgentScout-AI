@@ -27,7 +27,7 @@ const OpportunityCard = ({ opportunity, onApply = null }) => {
   if (!opportunity) return null;
 
   const {
-    title = "Software Engineer",
+    title = "Opportunity",
     company = "Company",
     location = "Remote",
     remoteType = "Remote",

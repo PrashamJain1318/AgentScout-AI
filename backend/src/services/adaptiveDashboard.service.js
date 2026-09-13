@@ -1,3 +1,4 @@
+const User = require('../models/User.model');
 const Resume = require('../models/Resume.model');
 const Application = require('../models/Application.model');
 const InterviewSession = require('../models/InterviewSession.model');
@@ -8,67 +9,83 @@ const InterviewSession = require('../models/InterviewSession.model');
 
 const getJourneyRoadmap = async (userId) => {
   try {
-    const [resumeRes, appsCountRes, offerCountRes, interviewRes] = await Promise.allSettled([
+    const [userRes, resumeRes, appsCountRes, offerCountRes, interviewRes] = await Promise.allSettled([
+      User.findById(userId).lean(),
       Resume ? Resume.findOne({ user: userId }).select('atsScore score').lean() : Promise.resolve(null),
       Application ? Application.countDocuments({ user: userId }) : Promise.resolve(0),
       Application ? Application.countDocuments({ user: userId, status: { $in: ['OFFER', 'OFFER_ACCEPTED', 'HIRED'] } }) : Promise.resolve(0),
       InterviewSession ? InterviewSession.countDocuments({ user: userId }) : Promise.resolve(0)
     ]);
 
+    const user = userRes.status === 'fulfilled' ? userRes.value : null;
     const resume = resumeRes.status === 'fulfilled' ? resumeRes.value : null;
     const appsCount = appsCountRes.status === 'fulfilled' ? appsCountRes.value : 0;
     const offerCount = offerCountRes.status === 'fulfilled' ? offerCountRes.value : 0;
     const interviewCount = interviewRes.status === 'fulfilled' ? interviewRes.value : 0;
 
+    const profile = user?.profile || {};
+    const hasTargetRole = Boolean((user?.targetRole || profile.targetRole || profile.headline) && (user?.targetRole || profile.targetRole || profile.headline).trim());
+    const hasSkills = Array.isArray(profile.skills) && profile.skills.length > 0;
+    const hasLocation = Boolean(profile.location);
+
+    let profileScore = 0;
+    if (user?.firstName) profileScore += 20;
+    if (user?.lastName) profileScore += 20;
+    if (hasTargetRole) profileScore += 30;
+    if (hasSkills) profileScore += 15;
+    if (hasLocation) profileScore += 15;
+    profileScore = Math.min(100, profileScore);
+
+    const isProfileComplete = hasTargetRole && profileScore >= 70;
     const atsScore = resume?.atsScore ?? resume?.score ?? 0;
 
     const phases = [
       {
         id: 'phase-profile',
         label: 'Profile Setup',
-        description: 'Complete core career preferences & target roles',
-        status: 'completed',
-        progress: 100,
+        description: isProfileComplete ? 'Core career preferences & target role configured' : 'Set target role & profile preferences',
+        status: isProfileComplete ? 'completed' : 'incomplete',
+        progress: profileScore,
         deepLink: '/settings'
       },
       {
         id: 'phase-resume',
         label: 'Resume Optimization',
-        description: atsScore >= 75 ? `ATS Score ${atsScore}% (Optimized)` : `Current ATS Score: ${atsScore}%`,
-        status: atsScore >= 75 ? 'completed' : resume ? 'active' : 'upcoming',
-        progress: Math.min(100, atsScore),
+        description: !resume ? 'Upload your resume to unlock ATS analysis' : atsScore >= 75 ? `ATS Score ${atsScore}% (Optimized)` : `Current ATS Score: ${atsScore}%`,
+        status: !resume ? 'not_started' : atsScore >= 75 ? 'completed' : 'active',
+        progress: !resume ? 0 : Math.min(100, atsScore),
         deepLink: '/resume-studio'
       },
       {
         id: 'phase-opportunities',
         label: 'Job Discovery & AI Match',
         description: 'Discover & analyze high-match job postings',
-        status: atsScore >= 70 ? 'active' : 'upcoming',
-        progress: atsScore >= 70 ? 85 : 30,
+        status: resume && atsScore >= 60 ? 'active' : 'not_started',
+        progress: resume && atsScore >= 60 ? 50 : 0,
         deepLink: '/opportunity-discovery'
       },
       {
         id: 'phase-applications',
         label: 'Application Pipeline',
         description: appsCount > 0 ? `${appsCount} application(s) tracked` : 'Prepare & submit tailored applications',
-        status: appsCount > 0 ? (offerCount > 0 ? 'completed' : 'active') : 'upcoming',
-        progress: Math.min(100, appsCount * 25),
+        status: appsCount > 0 ? (offerCount > 0 ? 'completed' : 'active') : 'not_started',
+        progress: appsCount > 0 ? Math.min(100, appsCount * 25) : 0,
         deepLink: '/applications'
       },
       {
         id: 'phase-interviews',
         label: 'Interview Practice',
         description: interviewCount > 0 ? `${interviewCount} session(s) completed` : 'AI mock interviews & behavioral prep',
-        status: interviewCount > 0 ? 'completed' : (appsCount > 0 ? 'active' : 'upcoming'),
-        progress: Math.min(100, interviewCount * 33 + (appsCount > 0 ? 30 : 0)),
+        status: interviewCount > 0 ? 'completed' : 'not_started',
+        progress: interviewCount > 0 ? Math.min(100, interviewCount * 33) : 0,
         deepLink: '/interview-prep'
       },
       {
         id: 'phase-growth',
         label: 'Offer & Career OS',
         description: offerCount > 0 ? 'Offer received! Manage career growth' : 'Offer negotiation & acceleration',
-        status: offerCount > 0 ? 'completed' : 'upcoming',
-        progress: offerCount > 0 ? 100 : 15,
+        status: offerCount > 0 ? 'completed' : 'not_started',
+        progress: offerCount > 0 ? 100 : 0,
         deepLink: '/career-os'
       }
     ];
@@ -77,12 +94,12 @@ const getJourneyRoadmap = async (userId) => {
   } catch (error) {
     console.error('Error generating journey roadmap:', error);
     return [
-      { id: 'phase-profile', label: 'Profile Setup', status: 'completed', progress: 100, deepLink: '/settings' },
-      { id: 'phase-resume', label: 'Resume Optimization', status: 'active', progress: 60, deepLink: '/resume-studio' },
-      { id: 'phase-opportunities', label: 'Job Discovery', status: 'upcoming', progress: 20, deepLink: '/opportunity-discovery' },
-      { id: 'phase-applications', label: 'Applications', status: 'upcoming', progress: 0, deepLink: '/applications' },
-      { id: 'phase-interviews', label: 'Interviews', status: 'upcoming', progress: 0, deepLink: '/interview-prep' },
-      { id: 'phase-growth', label: 'Career OS', status: 'upcoming', progress: 0, deepLink: '/career-os' }
+      { id: 'phase-profile', label: 'Profile Setup', status: 'incomplete', progress: 0, deepLink: '/settings' },
+      { id: 'phase-resume', label: 'Resume Optimization', status: 'not_started', progress: 0, deepLink: '/resume-studio' },
+      { id: 'phase-opportunities', label: 'Job Discovery', status: 'not_started', progress: 0, deepLink: '/opportunity-discovery' },
+      { id: 'phase-applications', label: 'Applications', status: 'not_started', progress: 0, deepLink: '/applications' },
+      { id: 'phase-interviews', label: 'Interviews', status: 'not_started', progress: 0, deepLink: '/interview-prep' },
+      { id: 'phase-growth', label: 'Career OS', status: 'not_started', progress: 0, deepLink: '/career-os' }
     ];
   }
 };

@@ -4,12 +4,12 @@ import FadeIn from "../motion/FadeIn";
 
 const CareerJourney = ({ phases, onNavigate }) => {
   const journeyPhases = phases && phases.length > 0 ? phases : [
-    { id: 'phase-profile', label: 'Profile Setup', status: 'completed', progress: 100, deepLink: '/settings' },
-    { id: 'phase-resume', label: 'Resume Optimization', status: 'active', progress: 65, deepLink: '/resume-studio' },
-    { id: 'phase-opportunities', label: 'Job Discovery', status: 'upcoming', progress: 20, deepLink: '/opportunity-discovery' },
-    { id: 'phase-applications', label: 'Applications', status: 'upcoming', progress: 0, deepLink: '/applications' },
-    { id: 'phase-interviews', label: 'Interviews', status: 'upcoming', progress: 0, deepLink: '/interview-prep' },
-    { id: 'phase-growth', label: 'Career OS', status: 'upcoming', progress: 0, deepLink: '/career-os' }
+    { id: 'phase-profile', label: 'Profile Setup', status: 'active', progress: 0, deepLink: '/dashboard/profile' },
+    { id: 'phase-resume', label: 'Resume Optimization', status: 'upcoming', progress: 0, deepLink: '/dashboard/resume' },
+    { id: 'phase-opportunities', label: 'Job Discovery', status: 'upcoming', progress: 0, deepLink: '/dashboard/opportunities' },
+    { id: 'phase-applications', label: 'Applications', status: 'upcoming', progress: 0, deepLink: '/dashboard/applications' },
+    { id: 'phase-interviews', label: 'Interviews', status: 'upcoming', progress: 0, deepLink: '/dashboard/interview-coach' },
+    { id: 'phase-growth', label: 'Career OS', status: 'upcoming', progress: 0, deepLink: '/dashboard/career-os' }
   ];
 
   return (
@@ -39,7 +39,7 @@ const CareerJourney = ({ phases, onNavigate }) => {
                   <span className="step-number">0{idx + 1}</span>
                   <span className={`step-status-tag status-${phase.status}`}>
                     {isCompleted ? <CheckCircle2 size={12} /> : isActive ? <ShieldCheck size={12} /> : null}
-                    {phase.status.toUpperCase()}
+                    {phase.status.replace(/_/g, ' ').toUpperCase()}
                   </span>
                 </div>
 
@@ -49,12 +49,12 @@ const CareerJourney = ({ phases, onNavigate }) => {
                 <div className="step-progress-bar-bg">
                   <div
                     className="step-progress-fill"
-                    style={{ width: `${phase.progress || (isCompleted ? 100 : isActive ? 50 : 0)}%` }}
+                    style={{ width: `${phase.progress ?? (isCompleted ? 100 : isActive ? 50 : 0)}%` }}
                   />
                 </div>
 
                 <div className="step-footer">
-                  <span className="step-progress-txt">{phase.progress || (isCompleted ? 100 : isActive ? 50 : 0)}%</span>
+                  <span className="step-progress-txt">{phase.progress ?? (isCompleted ? 100 : isActive ? 50 : 0)}%</span>
                   <ChevronRight size={14} className="step-arrow" />
                 </div>
               </div>
