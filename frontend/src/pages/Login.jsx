@@ -14,6 +14,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import AuthVerification from "../components/auth/AuthVerification";
 import ThemeToggle from "../components/layout/ThemeToggle";
+import { executeRecaptcha } from "../utils/recaptcha";
 
 const Auth3DCanvas = lazy(() => import("../components/auth/Auth3DCanvas"));
 
@@ -61,9 +62,11 @@ const Login = () => {
 
     try {
       setSubmitting(true);
+      const recaptchaToken = await executeRecaptcha("LOGIN");
       await login({
         email: form.email.trim(),
         password: form.password,
+        recaptchaToken,
       });
 
       const destination = location.state?.from?.pathname || "/dashboard";

@@ -15,6 +15,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import AuthVerification from "../components/auth/AuthVerification";
 import ThemeToggle from "../components/layout/ThemeToggle";
+import { executeRecaptcha } from "../utils/recaptcha";
 
 const Signup = () => {
   const { user, setUser, loading, register } = useAuth();
@@ -84,11 +85,13 @@ const Signup = () => {
 
     try {
       setSubmitting(true);
+      const recaptchaToken = await executeRecaptcha("REGISTER");
       const responseData = await register({
         firstName,
         lastName,
         email,
         password,
+        recaptchaToken,
       });
 
       const registeredUser = responseData.user || responseData.data?.user || responseData.data || null;

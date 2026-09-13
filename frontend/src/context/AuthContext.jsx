@@ -105,9 +105,11 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Email and password are required");
       }
 
+      const recaptchaToken = typeof credentialsOrEmail === "object" ? credentialsOrEmail.recaptchaToken || null : null;
+
       const response = await api.post(
         "/auth/login",
-        { email, password },
+        { email, password, recaptchaToken },
         { withCredentials: true }
       );
 
