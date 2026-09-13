@@ -1,5 +1,6 @@
 const User = require('../models/User.model');
 const sendTokenCookie = require('../utils/sendTokenCookie');
+const recaptchaService = require('../services/recaptcha.service');
 
 /**
  * Register a new candidate user account.
@@ -101,6 +102,12 @@ const register = async (req, res, next) => {
       });
     }
 
+    // 4b. reCAPTCHA Enterprise Assessment (Non-blocking fail-safe)
+    const recaptchaToken = body.recaptchaToken || body.recaptcha_token || body.gRecaptchaResponse || '';
+    if (recaptchaToken) {
+      await recaptchaService.createAssessment(recaptchaToken, 'REGISTER');
+    }
+
     // 5. Check for Duplicate Email -> HTTP 409 Conflict
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
@@ -185,6 +192,12 @@ const login = async (req, res, next) => {
         success: false,
         message: 'Please provide email and password'
       });
+    }
+
+    // 1b. reCAPTCHA Enterprise Assessment (Non-blocking fail-safe)
+    const recaptchaToken = body.recaptchaToken || body.recaptcha_token || body.gRecaptchaResponse || '';
+    if (recaptchaToken) {
+      await recaptchaService.createAssessment(recaptchaToken, 'LOGIN');
     }
 
     // 2. Query user with explicit password selection
